@@ -34,7 +34,7 @@ int main()
     {
         case MENU_PRINCIPAL:
             fondoMenu(fondoTexture);
-            menuTitulo();
+            menuTitulo("MATH BROS");
 
             if (btnsMenu("Jugar", 250)) pantallaActual = MENU_NIVELES;
             if (btnsMenu("Tienda", 370)) pantallaActual = MENU_TIENDA;
@@ -42,12 +42,12 @@ int main()
             break;
 
         case MENU_NIVELES:
-            DrawText("Estás en el MENÚ DE NIVELES", 100, 100, 30, DARKBLUE);
+            menuTitulo("Niveles")
             if (btnsMenu("Volver", 600)) pantallaActual = MENU_PRINCIPAL;
             break;
 
         case MENU_TIENDA:
-            DrawText("Estás en la TIENDA", 100, 100, 30, DARKGREEN);
+            menuTitulo("Tienda")
             if (btnsMenu("Volver", 600)) pantallaActual = MENU_PRINCIPAL;
             break;
 
