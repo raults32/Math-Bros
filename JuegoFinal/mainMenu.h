@@ -4,7 +4,7 @@
 //**********************************************************************************
 //** Prototipos **//
 //**********************************************************************************
-void menuTitulo();
+void menuTitulo(const char textotitulo[]);
 bool btnsMenu(const char textoBoton[], int rectY);
 void fondoMenu(Texture2D fondoTexture);
 
@@ -13,14 +13,14 @@ void fondoMenu(Texture2D fondoTexture);
 //**********************************************************************************
 
 //*** TITULO DEL MENU ***//
-void menuTitulo()
+void menuTitulo(const char textotitulo[])
 {
     int fontSize = 100;
-    int textWidth = MeasureText("MATH BROS", fontSize);
+    int textWidth = MeasureText(textotitulo, fontSize);
     int textX = (1280 - textWidth) / 2;
     int textY = 50;
 
-    DrawText("MATH BROS", textX, textY, fontSize, ORANGE);
+    DrawText(textotitulo, textX, textY, fontSize, ORANGE);
 }
 
 //*** FONDO DEL MENU ***//
