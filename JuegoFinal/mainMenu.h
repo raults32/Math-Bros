@@ -15,6 +15,7 @@ void fondoMenu(Texture2D fondoTexture);
 //*** TITULO DEL MENU ***//
 void menuTitulo(const char textotitulo[])
 {
+    
     int fontSize = 100;
     int textWidth = MeasureText(textotitulo, fontSize);
     int textX = (1280 - textWidth) / 2;
