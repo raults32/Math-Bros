@@ -29,10 +29,10 @@ int main()
 
     Texture2D fondoTexture;
     InitWindow(screenWidth, screenHeight, "Math Bros"); // Inicializa la ventana con un tamaño de 1280x720 y el título "Math Bros"
-     
+
     Image icon = LoadImage("src/images/icon.png"); // Carga la imagen del icono
-    SetWindowIcon(icon); // Establece el icono de la ventana
-    UnloadImage(icon); // Libera la imagen del icono de la memoria
+    SetWindowIcon(icon);                           // Establece el icono de la ventana
+    UnloadImage(icon);                             // Libera la imagen del icono de la memoria
 
     Texture2D fondosNiveles[NUM_NIVELES];
     char rutasFondos[NUM_NIVELES][50] = {
@@ -55,7 +55,7 @@ int main()
     ImageResize(&fondo, screenWidth, screenHeight);      // Redimensiona la imagen del fondo al tamaño de la ventana
     fondoTexture = LoadTextureFromImage(fondo);          // Convierte la imagen a textura
     UnloadImage(fondo);                                  // Libera la imagen de memoria
-    
+
     SetTargetFPS(60); // Establece la tasa de fotogramas por segundo
 
     Vector2 posicionJugador = {400, 280}; // Posición inicial del jugador
@@ -63,7 +63,6 @@ int main()
     while (!WindowShouldClose())
     {
         BeginDrawing();
-        ClearBackground(RAYWHITE);
 
         switch (pantallaActual)
         {
@@ -71,6 +70,7 @@ int main()
         //** Menu Principal **//
         //**********************************************************************************
         case MENU_PRINCIPAL:
+            ClearBackground(RAYWHITE); // Limpia el fondo de la pantalla con color blanco
             fondoMenu(fondoTexture);
             menuTitulo("MATH BROS");
 
@@ -80,12 +80,15 @@ int main()
                 pantallaActual = MENU_TIENDA;
             if (btnsMenu("Salir", 490))
                 pantallaActual = SALIR;
+                        ClearBackground(RAYWHITE);
+
             break;
             //**********************************************************************************
             //** Menu de Niveles **//
             //**********************************************************************************
 
         case MENU_NIVELES:
+            ClearBackground(RAYWHITE); // Limpia el fondo de la pantalla con color blanco
             fondoMenu(fondoTexture);
             menuTitulo("Niveles");
             if (btnsNiveles("Nivel 1", 200, 250))
@@ -116,6 +119,7 @@ int main()
 
             if (juegoPausado)
             {
+
                 if (IsKeyPressed(KEY_ESCAPE))
                 {
                     // Si ya está en pausa y se presiona ESC, se reanuda

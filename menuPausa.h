@@ -16,18 +16,33 @@ PausaOpcion menuPausa()
     int yInicial = 200;
     int espacio = 20;
 
+    int fontSize = 40;
+    int textWidth = MeasureText("JUEGO EN PAUSA", fontSize);
+    int textX = (GetScreenWidth() - textWidth) / 2;
+
     const char *opciones[] = {"Continuar", "Menú Principal", "Salir del Juego"};
     PausaOpcion resultados[] = {PAUSA_CONTINUAR, PAUSA_MENU_PRINCIPAL, PAUSA_SALIR};
 
-    DrawText("JUEGO EN PAUSA", GetScreenWidth() / 2 - 150, 100, 40, RED);
+    // Capa semitransparente encima del juego
+    DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(DARKGRAY, 0.050f));
 
+    // Título
+    DrawText("JUEGO EN PAUSA", textX, 120, fontSize, RED);
+
+    // Botones
     for (int i = 0; i < 3; i++)
     {
-        Rectangle btn = {(float)x, (float)yInicial + i * ((float)altoBtn + (float)espacio), (float)anchoBtn, (float)altoBtn};
+        Rectangle btn = {
+            (float)x,
+            (float)(yInicial + i * (altoBtn + espacio)),
+            (float)anchoBtn,
+            (float)altoBtn
+        };
+
         Color color = CheckCollisionPointRec(GetMousePosition(), btn) ? LIGHTGRAY : GRAY;
 
         DrawRectangleRec(btn, color);
-        DrawText(opciones[i], x + 30, btn.y + 10, 20, DARKGRAY);
+        DrawText(opciones[i], x + 30, btn.y + 15, 20, DARKGRAY);
 
         if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && CheckCollisionPointRec(GetMousePosition(), btn))
         {
@@ -35,5 +50,5 @@ PausaOpcion menuPausa()
         }
     }
 
-    return PAUSA_NINGUNA; // Si no se hace clic, no se cambia nada
+    return PAUSA_NINGUNA;
 }
