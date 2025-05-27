@@ -36,8 +36,8 @@ int main()
 
     Texture2D fondosNiveles[NUM_NIVELES];
     char rutasFondos[NUM_NIVELES][50] = {
-        "src/images/fondo_nivel1.png",
-        "src/images/fondo_nivel2.png",
+        "src/images/nivel1.png",
+        "src/images/nivel2.png",
         "src/images/nivel3.jpg"};
 
     for (int i = 0; i < NUM_NIVELES; i++)

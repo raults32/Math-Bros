@@ -49,10 +49,10 @@ GameStatus runGame(Vector2 *posJugador, Texture2D fondo)
     camera.offset = (Vector2){screenWidth / 2.0f, screenHeight / 2.0f};
     camera.rotation = 0.0f;
     camera.zoom = 1.0f;
-
-    const float GRAVITY = 400;
-    const float PLAYER_JUMP_SPD = 350.0f;
-    const float PLAYER_HOR_SPD = 200.0f;
+ 
+    const float GRAVITY = 500; // Gravedad que afecta al jugador
+    const float PLAYER_JUMP_SPD = 320.0f; // Velocidad de salto del jugador
+    const float PLAYER_HOR_SPD = 225.0f;  // Velocidad horizontal del jugador
 
     SetTargetFPS(60);
 
@@ -61,10 +61,8 @@ GameStatus runGame(Vector2 *posJugador, Texture2D fondo)
         float deltaTime = GetFrameTime();
 
         // Movimiento horizontal
-        if (IsKeyDown(KEY_LEFT))
-            player.position.x -= PLAYER_HOR_SPD * deltaTime;
-        if (IsKeyDown(KEY_RIGHT))
-            player.position.x += PLAYER_HOR_SPD * deltaTime;
+        if (IsKeyDown(KEY_LEFT)) player.position.x -= PLAYER_HOR_SPD * deltaTime;
+        if (IsKeyDown(KEY_RIGHT)) player.position.x += PLAYER_HOR_SPD * deltaTime;
 
         // Salto
         if (IsKeyPressed(KEY_SPACE) && player.canJump)

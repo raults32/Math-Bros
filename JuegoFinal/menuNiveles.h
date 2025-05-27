@@ -9,7 +9,7 @@ bool btnsNiveles(const char textoBoton[], int rectX, int rectY)
 {
     int rectWidth = 200;                                                         // Ancho del rectángulo
     int rectHeight = 120;                                                        // Alto del rectángulo                  // Calcula la posición X del rectángulo para centrarlo en la pantalla
-    Rectangle rect = {rectX, (float)rectY, (float)rectWidth, (float)rectHeight}; // Crea un rectángulo con las dimensiones y posición especificadas
+    Rectangle rect = {(float)rectX, (float)rectY, (float)rectWidth, (float)rectHeight}; // Crea un rectángulo con las dimensiones y posición especificadas
 
     // Centrar el texto con el boton
     int fontsize = 40;                                 // Tamaño de la fuente

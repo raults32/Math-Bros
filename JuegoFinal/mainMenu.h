@@ -36,7 +36,7 @@ bool btnsMenu(const char textoBoton[], int rectY)
     int rectWidth = 250;                                    // Ancho del rectángulo
     int rectHeight = 100;                                   // Alto del rectángulo
     float rectX = (1280 - rectWidth) / 2;                     // Calcula la posición X del rectángulo para centrarlo en la pantalla
-    Rectangle rect = {rectX,(float)rectY, (float)rectWidth, (float)rectHeight}; // Crea un rectángulo con las dimensiones y posición especificadas
+    Rectangle rect = {(float)rectX,(float)rectY, (float)rectWidth, (float)rectHeight}; // Crea un rectángulo con las dimensiones y posición especificadas
 
     int fontsize = 40;                                 // Tamaño de la fuente
     int textWidth = MeasureText(textoBoton, fontsize); // Mide el ancho del texto

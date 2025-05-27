@@ -23,7 +23,7 @@ PausaOpcion menuPausa()
 
     for (int i = 0; i < 3; i++)
     {
-        Rectangle btn = {x, yInicial + i * (altoBtn + espacio), anchoBtn, altoBtn};
+        Rectangle btn = {(float)x, (float)yInicial + i * ((float)altoBtn + (float)espacio), (float)anchoBtn, (float)altoBtn};
         Color color = CheckCollisionPointRec(GetMousePosition(), btn) ? LIGHTGRAY : GRAY;
 
         DrawRectangleRec(btn, color);
