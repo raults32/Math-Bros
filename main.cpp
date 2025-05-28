@@ -80,7 +80,7 @@ int main()
                 pantallaActual = MENU_TIENDA;
             if (btnsMenu("Salir", 490))
                 pantallaActual = SALIR;
-                        ClearBackground(RAYWHITE);
+            ClearBackground(RAYWHITE);
 
             break;
             //**********************************************************************************
@@ -93,21 +93,26 @@ int main()
             menuTitulo("Niveles");
             if (btnsNiveles("Nivel 1", 200, 250))
             {
-                nivelActual = 2; // Cambia el nivel actual a 1
+                nivelActual = 0;                       // Cambia el nivel actual a 1
+                posicionJugador = (Vector2){400, 280}; // Reinicia la posición del jugador
                 pantallaActual = MENU_JUEGO;
                 menuPausa();
             }
 
             if (btnsNiveles("Nivel 2", 540, 250))
             {
-                nivelActual = 1; // Cambia el nivel actual a 2
-                pantallaActual = MENU_PRINCIPAL;
+                nivelActual = 1;                       // Cambia el nivel actual a 2
+                posicionJugador = (Vector2){400, 280}; // Reinicia la posición del jugador
+                pantallaActual = MENU_JUEGO;
+                menuPausa();
             }
 
             if (btnsNiveles("Nivel 3", 840, 250))
             {
-                nivelActual = 2; // Cambia el nivel actual a 3
-                pantallaActual = MENU_PRINCIPAL;
+                nivelActual = 2;                       // Cambia el nivel actual a 3
+                posicionJugador = (Vector2){400, 280}; // Reinicia la posición del jugador
+                pantallaActual = MENU_JUEGO;
+                menuPausa();
             }
 
             if (btnsMenu("Volver", 550))
