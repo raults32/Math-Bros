@@ -36,8 +36,7 @@ PausaOpcion menuPausa()
             (float)x,
             (float)(yInicial + i * (altoBtn + espacio)),
             (float)anchoBtn,
-            (float)altoBtn
-        };
+            (float)altoBtn};
 
         Color color = CheckCollisionPointRec(GetMousePosition(), btn) ? LIGHTGRAY : GRAY;
 
