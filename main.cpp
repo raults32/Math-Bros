@@ -27,35 +27,16 @@ typedef struct
     int price;
     bool unlocked;
     const char *imagePath;
-    Texture2D imageTexture; // Miniatura para la tienda
-    Texture2D fullTexture;  // Textura original para animación en el juego
-    int frames;             // Número de frames de animación
+    Texture2D imageTexture;   // Miniatura para la tienda
+    Texture2D fullTexture;    // Textura original para animación en el juego
+    int frames;               // Número de frames de animación
+    const char *previewPath;  // Ruta de la imagen ilustrativa
+    Texture2D previewTexture; // Imagen ilustrativa para la tienda
 } ColorOption;
 
 // Función para dibujar botones de compra
-bool DrawBuyButton(const char *text, int price, bool unlocked, int posY, int *coins)
-{
-    int btnWidth = 300;
-    int btnHeight = 50;
-    int btnX = (1280 - btnWidth) / 2; // Centrado en pantalla (1280 es el ancho de la ventana)
-    Rectangle btn = {(float)btnX, (float)posY, (float)btnWidth, (float)btnHeight};
-    bool mouseOver = CheckCollisionPointRec(GetMousePosition(), btn);
-    Color btnColor = unlocked ? Fade(GREEN, 0.7f) : (mouseOver ? Fade(DARKBLUE, 0.8f) : Fade(BLUE, 0.7f));
 
-    DrawRectangleRec(btn, btnColor);
-    DrawRectangleLinesEx(btn, 6.0f, DARKBLUE);
-    const char *displayText = unlocked ? "Desbloqueado" : TextFormat("%s - %d monedas", text, price);
-    int textWidth = MeasureText(displayText, 20);
-    DrawText(displayText, btnX + (btnWidth - textWidth) / 2, posY + (btnHeight - 20) / 2, 20, WHITE);
-
-    // Permitir compra si no está desbloqueado y hay suficientes monedas
-    if (mouseOver && IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && !unlocked && *coins >= price)
-    {
-        *coins -= price; // Restar monedas
-        return true;     // Indicar que se compró
-    }
-    return false;
-}
+bool DrawBuyButton(const char *text, int price, bool unlocked, int posX, int posY, int *coins);
 
 int main()
 {
@@ -93,27 +74,27 @@ int main()
 
     // Colores disponibles para comprar, con rutas de imágenes de referencia
     ColorOption colors[NUM_COLORS] = {
-        {"Default", 0, true, "src/images/zorrodefault.png", {0}, {0}, 4},
-        {"Rojo", 1, false, "src/images/zorrorojo.png", {0}, {0}, 4},
-        {"Azul", 10, false, "src/images/zorroazul.png", {0}, {0}, 4},
-        {"Verde", 15, false, "src/images/zorroverde.png", {0}, {0}, 4},
-        {"Morado", 15, false, "src/images/zorromorado.png", {0}, {0}, 4}};
+        {"Default", 0, true, "src/images/zorrodefault.png", {0}, {0}, 4, "src/images/default.png", {0}},
+        {"Rojo", 3, false, "src/images/zorrorojo.png", {0}, {0}, 4, "src/images/red.png", {0}},
+        {"Azul", 8, false, "src/images/zorroazul.png", {0}, {0}, 4, "src/images/azul.png", {0}},
+        {"Verde", 10, false, "src/images/zorroverde.png", {0}, {0}, 4, "src/images/verde.png", {0}},
+        {"Morado", 15, false, "src/images/zorromorado.png", {0}, {0}, 4, "src/images/morado.png", {0}}};
 
     int selectedColorIndex = 0; // Índice del color actualmente seleccionado
 
     // Cargar las imágenes de referencia de los personajes
     for (int i = 0; i < NUM_COLORS; i++)
     {
-        // Miniatura para la tienda
-        Image imgMini = LoadImage(colors[i].imagePath);
-        ImageResize(&imgMini, 50, 50);
-        colors[i].imageTexture = LoadTextureFromImage(imgMini);
-        UnloadImage(imgMini);
-
         // Textura original para el juego
         Image imgFull = LoadImage(colors[i].imagePath);
         colors[i].fullTexture = LoadTextureFromImage(imgFull);
         UnloadImage(imgFull);
+
+        // Imagen ilustrativa para la tienda
+        Image imgPreview = LoadImage(colors[i].previewPath);
+        ImageResize(&imgPreview, 150, 150);
+        colors[i].previewTexture = LoadTextureFromImage(imgPreview);
+        UnloadImage(imgPreview);
     }
 
     SetExitKey(0); // Desactiva la tecla de salida (ESC) para evitar cerrar la ventana
@@ -138,9 +119,37 @@ int main()
         //**********************************************************************************
         case MENU_PRINCIPAL:
         {
-            ClearBackground(RAYWHITE); // Limpia el fondo de la pantalla con color blanco
+            ClearBackground(RAYWHITE);
             fondoMenu(fondoTexture);
             menuTitulo("MATH BROS");
+
+            // Mostrar monedas en el menú principal
+            DrawText(TextFormat("Monedas: %d", coinsCollected), 10, 40, 20, YELLOW);
+
+            // Mostrar personaje equipado actual en una esquina
+            // Fondo y marco
+            int imgWidth = colors[selectedColorIndex].previewTexture.width;
+            int imgHeight = colors[selectedColorIndex].previewTexture.height;
+            float scale = 1.2f;                            // Escala para hacer la imagen más grande
+            int frameWidth = (int)(imgWidth * scale) + 20; // Margen de 10 píxeles a cada lado
+            int frameHeight = (int)(imgHeight * scale) + 20;
+            int frameX = 1280 - frameWidth - 20; // 20 píxeles desde el borde derecho
+            int frameY = 720 - frameHeight - 60; // 60 píxeles desde el borde inferior
+
+            // Texto "Personaje actual"
+            const char *text = "Personaje actual";
+            int textSize = 24;
+            int textWidth = MeasureText(text, textSize);
+            int textX = frameX + (frameWidth - textWidth) / 2;
+            int textY = frameY - 30;
+            DrawText(text, textX + 2, textY + 2, textSize, BLACK); // Sombra
+            DrawText(text, textX, textY, textSize, YELLOW);        // Texto principal
+
+            // Imagen del personaje
+            int imgX = frameX + (frameWidth - (int)(imgWidth * scale)) / 2;
+            int imgY = frameY + (frameHeight - (int)(imgHeight * scale)) / 2;
+            DrawTextureEx(colors[selectedColorIndex].previewTexture,
+                          (Vector2){(float)imgX, (float)imgY}, 0.0f, scale, WHITE);
 
             if (btnsMenu("Jugar", 250))
                 pantallaActual = MENU_NIVELES;
@@ -148,7 +157,6 @@ int main()
                 pantallaActual = MENU_TIENDA;
             if (btnsMenu("Salir", 490))
                 pantallaActual = SALIR;
-            ClearBackground(RAYWHITE);
             break;
         }
 
@@ -225,7 +233,7 @@ int main()
             else
             {
                 GameStatus status = nivel1(&posicionJugador, fondosNiveles[nivelActual], &coinsCollected, colors[selectedColorIndex].fullTexture, colors[selectedColorIndex].frames);
-                
+
                 if (IsKeyPressed(KEY_ESCAPE)) // Permitir pausa en cualquier momento
                 {
                     juegoPausado = true;
@@ -362,43 +370,95 @@ int main()
             break;
         }
 
-        //**********************************************************************************
-        //** Menu de Tienda **//
-        //**********************************************************************************
+            //**********************************************************************************
+            //** Menu de Tienda **//
+            //**********************************************************************************
         case MENU_TIENDA:
         {
             fondoMenu(fondoTexture);
+            DrawText(TextFormat("Monedas: %d", coinsCollected), 10, 40, 20, YELLOW);
             menuTitulo("Tienda");
-            DrawText(TextFormat("Monedas: %d", coinsCollected), 10, 50, 20, WHITE); // Mostrar monedas recolectadas
 
-            // Botones para comprar colores con imágenes de referencia
-            int spacing = 70;
+            // Mensaje de ayuda centrado
+            const char *helpText = "Compra y equipa nuevos personajes!";
+            int helpTextSize = 24;
+            int helpTextWidth = MeasureText(helpText, helpTextSize);
+            int helpTextX = (1280 - helpTextWidth) / 2;
+            int helpTextY = 150;
+            DrawText(helpText, helpTextX + 2, helpTextY + 2, helpTextSize, BLACK); // Sombra
+            DrawText(helpText, helpTextX, helpTextY, helpTextSize, WHITE);         // Texto principal
+
+            int btnWidth = 180; // Reducido para mejor ajuste
+            int btnHeight = 45;
+            int imageSize = 130; // Reducido ligeramente
+            int spacing = 60;    // Espaciado optimizado
+
+            int totalWidth = NUM_COLORS * btnWidth + (NUM_COLORS - 1) * spacing;
+            int startX = (1280 - totalWidth) / 2;
+            int btnY = 400; // Subido un poco
+
             for (int i = 0; i < NUM_COLORS; i++)
             {
-                int posY = 200 + i * spacing;
-                // Dibujar la imagen de referencia a la izquierda del botón
-                int imageX = (1280 - 300) / 2 - 70; // A la izquierda del botón (300 es el ancho del botón)
-                int imageY = posY;
-                DrawTexture(colors[i].imageTexture, imageX, imageY, WHITE);
+                int btnX = startX + i * (btnWidth + spacing);
 
-                if (DrawBuyButton(colors[i].name, colors[i].price, colors[i].unlocked, posY, &coinsCollected))
+                // Marco decorativo alrededor de la imagen
+                int imageX = btnX + (btnWidth - imageSize) / 2;
+                int imageY = btnY - imageSize - 30;
+
+                // Marco dorado si está equipado
+                if (i == selectedColorIndex)
                 {
-                    colors[i].unlocked = true; // Marcar como desbloqueado
+                    DrawRectangleLinesEx((Rectangle){(float)imageX - 5, (float)imageY - 5, (float)imageSize + 10, (float)imageSize + 10},
+                                         3.0f, GOLD);
                 }
 
-                // Si está desbloqueado, permitir seleccionar
+                DrawTextureEx(colors[i].previewTexture, (Vector2){(float)imageX, (float)imageY},
+                              0.0f, (float)imageSize / colors[i].previewTexture.width, WHITE);
+
+                // Nombre del personaje arriba de la imagen
+                int nameWidth = MeasureText(colors[i].name, 16);
+                DrawText(colors[i].name, btnX + (btnWidth - nameWidth) / 2,
+                         imageY - 25, 16, WHITE);
+
+                // Botón de compra mejorado
+                if (DrawBuyButton(colors[i].name, colors[i].price, colors[i].unlocked,
+                                  btnX, btnY, &coinsCollected))
+                {
+                    colors[i].unlocked = true;
+                }
+
+                // Botón de equipar mejorado
                 if (colors[i].unlocked)
                 {
-                    Rectangle selector = {(float)(imageX + 60), (float)(posY + 10), 20, 20};
-                    DrawRectangleRec(selector, (i == selectedColorIndex) ? GREEN : DARKGRAY);
-                    if (CheckCollisionPointRec(GetMousePosition(), selector) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
+                    int equipY = btnY + btnHeight + 15;
+                    Rectangle equipBtn = {(float)btnX, (float)equipY, (float)btnWidth, (float)btnHeight};
+                    bool equipMouseOver = CheckCollisionPointRec(GetMousePosition(), equipBtn);
+
+                    Color equipColor;
+                    if (i == selectedColorIndex)
+                        equipColor = Fade(GOLD, 0.8f); // Dorado para equipado
+                    else if (equipMouseOver)
+                        equipColor = Fade(GREEN, 0.8f);
+                    else
+                        equipColor = Fade(DARKGREEN, 0.7f);
+
+                    DrawRectangleRec(equipBtn, equipColor);
+                    DrawRectangleLinesEx(equipBtn, 2.0f,
+                                         (i == selectedColorIndex) ? GOLD : DARKGREEN);
+
+                    const char *equipText = (i == selectedColorIndex) ? "EQUIPADO" : "EQUIPAR";
+                    int equipTextWidth = MeasureText(equipText, 14);
+                    DrawText(equipText, btnX + (btnWidth - equipTextWidth) / 2,
+                             equipY + (btnHeight - 14) / 2, 14, WHITE);
+
+                    if (equipMouseOver && IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
                     {
                         selectedColorIndex = i;
                     }
                 }
             }
 
-            if (btnsMenu("Volver", 600))
+            if (btnsMenu("Volver", 580))
                 pantallaActual = MENU_PRINCIPAL;
             break;
         }
@@ -440,4 +500,29 @@ int main()
     CloseWindow(); // Cierra la ventana
 
     return 0;
+}
+
+bool DrawBuyButton(const char *text, int price, bool unlocked, int posX, int posY, int *coins)
+{
+    int btnWidth = 200; // CAMBIADO: ahora coincide con el ancho del menú
+    int btnHeight = 50;
+    int btnX = posX;
+    Rectangle btn = {(float)btnX, (float)posY, (float)btnWidth, (float)btnHeight};
+    bool mouseOver = CheckCollisionPointRec(GetMousePosition(), btn);
+    Color btnColor = unlocked ? Fade(GREEN, 0.7f) : (mouseOver ? Fade(DARKBLUE, 0.8f) : Fade(BLUE, 0.7f));
+
+    DrawRectangleRec(btn, btnColor);
+    DrawRectangleLinesEx(btn, 5.0f, DARKBLUE); // Borde más delgado
+
+    const char *displayText = unlocked ? "Desbloqueado" : TextFormat("%s - %d Monedas", text, price);
+    int textWidth = MeasureText(displayText, 16); // Texto más pequeño para que quepa
+    DrawText(displayText, btnX + (btnWidth - textWidth) / 2, posY + (btnHeight - 16) / 2, 16, WHITE);
+
+    // Permitir compra si no está desbloqueado y hay suficientes monedas
+    if (mouseOver && IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && !unlocked && *coins >= price)
+    {
+        *coins -= price;
+        return true;
+    }
+    return false;
 }
