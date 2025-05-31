@@ -70,21 +70,21 @@ GameStatus nivel1(Vector2 *posJugador, Texture2D fondo, int *coinsCollected, Tex
         {{0, 0, 1280, 720}, 0, BLANK},  // Fondo completo (no bloqueante)
         {{0, 600, 1280, 120}, 1, GRAY}, // Suelo
 
-        {{200, 550, 200, 50}, 1, GRAY},  // Plataforma 1
-        {{400, 450, 250, 50}, 1, GRAY},  // Plataforma 2
-        {{650, 350, 200, 50}, 1, GRAY},  // Plataforma 3
-        {{900, 250, 200, 50}, 1, GRAY},  // Plataforma 4
-        {{300, 300, 150, 50}, 1, GRAY},  // Plataforma 5
-        {{800, 150, 150, 50}, 1, GRAY}}; // Plataforma 6
+        {{150, 500, 200, 50}, 1, GRAY},  // Plataforma 1 - izquierda baja
+        {{450, 400, 200, 50}, 1, GRAY},  // Plataforma 2 - centro
+        {{750, 300, 200, 50}, 1, GRAY},  // Plataforma 3 - derecha
+        {{350, 250, 200, 50}, 1, GRAY},  // Plataforma 4 - centro-izquierda
+        {{650, 180, 200, 50}, 1, GRAY},  // Plataforma 5 - centro-derecha
+        {{950, 120, 200, 50}, 1, GRAY}}; // Plataforma 6 - derecha alta
 
     Coin coins[MAX_COINS] = {
         // pos    X     Y   Activo   X   Y  ancho  largo
-        {{270, 505}, true, {270, 505, 54, 65}},   // Sobre Plataforma 1
-        {{500, 430}, true, {500, 430, 30, 30}},   // Sobre Plataforma 2
-        {{750, 330}, true, {750, 330, 30, 30}},   // Sobre Plataforma 3
-        {{1000, 230}, true, {1000, 230, 30, 30}}, // Sobre Plataforma 4
-        {{350, 280}, true, {350, 280, 30, 30}},   // Sobre Plataforma 5
-        {{850, 180}, true, {850, 130, 30, 30}}};  // Sobre Plataforma 6
+        {{210, 440}, true, {210, 440, 30, 30}},  // Sobre Plataforma
+        {{510, 340}, true, {510, 340, 30, 30}},  // Sobre Plataforma
+        {{810, 240}, true, {810, 240, 30, 30}},  // Sobre Plataforma
+        {{410, 190}, true, {410, 190, 30, 30}},  // Sobre Plataforma
+        {{710, 120}, true, {710, 120, 30, 30}},  // Sobre Plataforma
+        {{1010, 60}, true, {1010, 90, 30, 30}}}; // Sobre Plataforma
 
     Question questions[MAX_QUESTIONS] = {
         {"¿Cuánto es 15 + 27?", {"32", "42", "37", "45"}, 1},
@@ -107,6 +107,12 @@ GameStatus nivel1(Vector2 *posJugador, Texture2D fondo, int *coinsCollected, Tex
     bool gameOver = false;
     bool levelCompleted = false;
     bool questionsAnswered[MAX_QUESTIONS] = {false}; // Rastrear preguntas respondidas correctamente
+    bool coinQuestionAnswered = false;
+
+    // SISTEMA DE INTENTOS
+    int currentAttempts = 0;     // Intentos actuales para la pregunta
+    const int MAX_ATTEMPTS = 2;  // Máximo 2 intentos por pregunta
+    bool questionFailed = false; // Si falló la pregunta después de 2 intentos
 
     int screenWidth = 1280;
     int screenHeight = 720;
@@ -128,7 +134,7 @@ GameStatus nivel1(Vector2 *posJugador, Texture2D fondo, int *coinsCollected, Tex
         float deltaTime = GetFrameTime();
 
         // Verificar si se han recolectado todas las monedas
-        if (!levelCompleted)
+        if (!levelCompleted && coinQuestionAnswered)
         {
             int activeCoins = 0;
             for (int i = 0; i < MAX_COINS; i++)
@@ -143,10 +149,9 @@ GameStatus nivel1(Vector2 *posJugador, Texture2D fondo, int *coinsCollected, Tex
                 levelCompleted = true;
             }
         }
-
+       //Condicion del estado del juego 
         if (!showingQuestion && feedbackTimer <= 0.0f && !gameOver && !levelCompleted)
         {
-            // Movimiento horizontal
             if (IsKeyDown(KEY_LEFT) || IsKeyDown(KEY_A))
             {
                 player.position.x -= PLAYER_HOR_SPD * deltaTime;
@@ -158,14 +163,12 @@ GameStatus nivel1(Vector2 *posJugador, Texture2D fondo, int *coinsCollected, Tex
                 facingRight = true;
             }
 
-            // Salto
             if (IsKeyPressed(KEY_SPACE) && player.canJump)
             {
                 player.speed = -PLAYER_JUMP_SPD;
                 player.canJump = false;
             }
 
-            // Colisiones con plataformas
             int hitObstacle = 0;
             for (int i = 0; i < MAX_ENVIRONMENT_ELEMENTS; i++)
             {
@@ -195,34 +198,35 @@ GameStatus nivel1(Vector2 *posJugador, Texture2D fondo, int *coinsCollected, Tex
                 player.canJump = true;
             }
 
-            // Detectar caída al vacío
             if (player.position.y > screenHeight + 100)
             {
                 gameOver = true;
                 feedbackTimer = FEEDBACK_DURATION;
             }
 
-            // Colisiones con monedas
             Rectangle playerRect = {player.position.x - frameWidth / 2, player.position.y - frameHeight, frameWidth, frameHeight};
             for (int i = 0; i < MAX_COINS; i++)
             {
                 if (coins[i].active && CheckCollisionRecs(playerRect, coins[i].rect))
                 {
                     coins[i].active = false;
-                    (*coinsCollected)++; // Incrementar contador de monedas
+                    (*coinsCollected)++;
                     showingQuestion = true;
-                    // Seleccionar una pregunta no respondida correctamente
+
                     do
                     {
                         currentQuestion = GetRandomValue(0, MAX_QUESTIONS - 1);
                     } while (questionsAnswered[currentQuestion]);
+
                     lastCoinCollected = i;
                     answeredCorrectly = false;
                     feedbackTimer = 0.0f;
+                    currentAttempts = 0;
+                    questionFailed = false;
+                    coinQuestionAnswered = false;
                 }
             }
 
-            // Actualizar animación
             bool isMoving = (IsKeyDown(KEY_LEFT) || IsKeyDown(KEY_A) || IsKeyDown(KEY_RIGHT) || IsKeyDown(KEY_D));
             if (isMoving)
             {
@@ -246,82 +250,71 @@ GameStatus nivel1(Vector2 *posJugador, Texture2D fondo, int *coinsCollected, Tex
                 currentFrame = 0;
             }
         }
-
-        // Actualizar temporizador de retroalimentación
+         
+        // Maneja el tiempo de espera tras responder una pregunta antes de continuar el juego.
         if (feedbackTimer > 0.0f)
         {
             feedbackTimer -= deltaTime;
-            if (feedbackTimer <= 0.0f && !answeredCorrectly && lastCoinCollected >= 0 && !gameOver)
+            if (feedbackTimer <= 0.0f && !gameOver)
             {
-                coins[lastCoinCollected].active = true;
-                showingQuestion = true;
-                // Contar preguntas no respondidas correctamente
-                int unansweredCount = 0;
-                for (int q = 0; q < MAX_QUESTIONS; q++)
+                if (answeredCorrectly || coinQuestionAnswered)
                 {
-                    if (!questionsAnswered[q])
-                        unansweredCount++;
-                }
-                if (unansweredCount > 0)
-                {
-                    do
-                    {
-                        currentQuestion = GetRandomValue(0, MAX_QUESTIONS - 1);
-                    } while (questionsAnswered[currentQuestion]);
-                }
-                else
-                {
-                    // Si todas las preguntas ya fueron respondidas correctamente, desactivar la moneda permanentemente
-                    lastCoinCollected = -1; // Evitar que se reactive la moneda
                     showingQuestion = false;
+                    lastCoinCollected = -1;
+                    coinQuestionAnswered = true;
+                }
+                else if (questionFailed)
+                {
+                    showingQuestion = false;
+                    lastCoinCollected = -1;
+                    (*coinsCollected)--;
+                    if (*coinsCollected < 0)
+                        *coinsCollected = 0;
+                    coinQuestionAnswered = false;
                 }
             }
         }
 
-        // Salir o reiniciar
         if (IsKeyPressed(KEY_ESCAPE) && !showingQuestion && !levelCompleted)
         {
             *posJugador = player.position;
-            
             UnloadTexture(coinTex);
             return GAME_PAUSE;
         }
 
-        // SI CAE AL VACIO
+        //REINICIAR EL NIVEL CUANDO CAE
         if (gameOver && IsKeyPressed(KEY_R))
         {
-            player.position = *posJugador; // Reiniciar posición
+            player.position = *posJugador;
             player.speed = 0;
             player.canJump = false;
             gameOver = false;
             for (int i = 0; i < MAX_COINS; i++)
-                coins[i].active = true; // Reactivar todas las monedas
+                coins[i].active = true;
             for (int i = 0; i < MAX_QUESTIONS; i++)
-                questionsAnswered[i] = false; // Reinicia el arreglo de preguntas
-            *coinsCollected -= MAX_COINS;     // Restar las monedas recolectadas en este nivel
+                questionsAnswered[i] = false;
+            *coinsCollected -= MAX_COINS;
             if (*coinsCollected < 0)
-                *coinsCollected = 0; // Asegurar que no baje de 0
+                *coinsCollected = 0;
+            currentAttempts = 0;
+            questionFailed = false;
+            coinQuestionAnswered = false;
         }
         if (gameOver && feedbackTimer <= 0.0f)
         {
             *posJugador = player.position;
-            
             UnloadTexture(coinTex);
             return GAME_OVER;
         }
 
-        // Actualizar cámara (no sigue al jugador si está en game over o nivel completado)
         if (!gameOver && !levelCompleted)
         {
             camera.target = player.position;
             camera.offset = (Vector2){screenWidth / 2.0f, screenHeight / 2.0f};
         }
 
-        // Dibujar
         BeginDrawing();
         ClearBackground(RAYWHITE);
-
-        // Dibujar fondo estático
         DrawTexture(fondo, 0, 0, WHITE);
 
         BeginMode2D(camera);
@@ -353,13 +346,19 @@ GameStatus nivel1(Vector2 *posJugador, Texture2D fondo, int *coinsCollected, Tex
 
         EndMode2D();
 
-        // Mostrar pregunta si está activa
+        // Muestra la pregunta actual y sus opciones si esta activa, y 
+        //gestiona las respuestas del jugador.
+
         if (showingQuestion && currentQuestion >= 0)
         {
             DrawRectangle(0, 0, screenWidth, screenHeight, Fade(DARKGRAY, 0.5f));
-
             int textWidth = MeasureText(questions[currentQuestion].text, 40);
             DrawText(questions[currentQuestion].text, (screenWidth - textWidth) / 2, 100, 40, WHITE);
+
+            char attemptInfo[50];
+            sprintf(attemptInfo, "Intentos restantes: %d", MAX_ATTEMPTS - currentAttempts);
+            int infoWidth = MeasureText(attemptInfo, 20);
+            DrawText(attemptInfo, (screenWidth - infoWidth) / 2, 150, 20, YELLOW);
 
             int btnWidth = 300;
             int btnHeight = 50;
@@ -381,37 +380,60 @@ GameStatus nivel1(Vector2 *posJugador, Texture2D fondo, int *coinsCollected, Tex
                 if (mouseOver && IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
                 {
                     answeredCorrectly = (i == questions[currentQuestion].correctAnswer);
+
                     if (answeredCorrectly)
                     {
                         questionsAnswered[currentQuestion] = true;
+                        coinQuestionAnswered = true;
+                        currentAttempts = 0;
+                        questionFailed = false;
+                        showingQuestion = false;
+                        feedbackTimer = FEEDBACK_DURATION;
                     }
-                    showingQuestion = false;
-                    feedbackTimer = FEEDBACK_DURATION;
+                    else
+                    {
+                        currentAttempts++;
+                        if (currentAttempts >= MAX_ATTEMPTS)
+                        {
+                            questionFailed = true;
+                            showingQuestion = false;
+                            feedbackTimer = FEEDBACK_DURATION;
+                        }
+                        else
+                        {
+                            // Solo muestra el feedback y mantiene la pregunta activa
+                            feedbackTimer = FEEDBACK_DURATION;
+                        }
+                    }
                 }
             }
         }
-
-        // Mostrar mensaje de retroalimentación
+        
+        
         if (feedbackTimer > 0.0f && !gameOver)
         {
             if (answeredCorrectly)
             {
                 DrawText("¡Correcto!", (screenWidth - MeasureText("¡Correcto!", 30)) / 2, 500, 30, GREEN);
             }
+            else if (questionFailed)
+            {
+                DrawText("¡Oh no, perdiste la moneda!", (screenWidth - MeasureText("¡Oh no, perdiste la moneda!", 30)) / 2, 500, 30, ORANGE);
+            }
             else
             {
-                DrawText("Incorrecto, intenta de nuevo.", (screenWidth - MeasureText("Incorrecto, intenta de nuevo.", 30)) / 2, 500, 30, RED);
+                char attemptMsg[100];
+                sprintf(attemptMsg, "Incorrecto. Intento %d de %d", currentAttempts, MAX_ATTEMPTS);
+                DrawText(attemptMsg, (screenWidth - MeasureText(attemptMsg, 30)) / 2, 500, 30, RED);
             }
         }
 
-        // Mostrar mensaje de nivel completado con botón de continuar
         if (levelCompleted)
         {
             DrawRectangle(0, 0, screenWidth, screenHeight, Fade(DARKGRAY, 0.5f));
             DrawText("¡Has completado el nivel!", (screenWidth - MeasureText("¡Has completado el nivel!", 40)) / 2, 300, 40, GREEN);
             DrawText("¡Felicidades!", (screenWidth - MeasureText("¡Felicidades!", 30)) / 2, 350, 30, WHITE);
 
-            // Botón de Continuar
             int btnWidth = 200;
             int btnHeight = 50;
             int btnX = (screenWidth - btnWidth) / 2;
@@ -429,11 +451,10 @@ GameStatus nivel1(Vector2 *posJugador, Texture2D fondo, int *coinsCollected, Tex
             {
                 *posJugador = player.position;
                 UnloadTexture(coinTex);
-                return GAME_WON; // Regresar al menú de niveles
+                return GAME_WON;
             }
         }
 
-        // Mostrar mensaje de game over
         if (gameOver)
         {
             DrawRectangle(0, 0, screenWidth, screenHeight, Fade(DARKGRAY, 0.5f));
@@ -447,7 +468,6 @@ GameStatus nivel1(Vector2 *posJugador, Texture2D fondo, int *coinsCollected, Tex
     }
 
     *posJugador = player.position;
-    
     UnloadTexture(coinTex);
     return GAME_CONTINUE;
 }
@@ -509,6 +529,10 @@ GameStatus nivel2(Vector2 *posJugador, Texture2D fondo, int *coinsCollected, Tex
     bool gameOver = false;
     bool levelCompleted = false;
 
+    int currentAttempts = 0;     // Intentos actuales para la pregunta
+    const int MAX_ATTEMPTS = 2;  // Máximo 2 intentos por pregunta
+    bool questionFailed = false; // Si falló la pregunta después de 2 intentos
+
     int screenWidth = 1280;
     int screenHeight = 720;
 
@@ -682,7 +706,7 @@ GameStatus nivel2(Vector2 *posJugador, Texture2D fondo, int *coinsCollected, Tex
         if (IsKeyPressed(KEY_ESCAPE) && !showingQuestion && !levelCompleted)
         {
             *posJugador = player.position;
-            
+
             UnloadTexture(coinTex);
             return GAME_PAUSE;
         }
@@ -703,7 +727,7 @@ GameStatus nivel2(Vector2 *posJugador, Texture2D fondo, int *coinsCollected, Tex
         if (gameOver && feedbackTimer <= 0.0f)
         {
             *posJugador = player.position;
-            
+
             UnloadTexture(coinTex);
             return GAME_OVER;
         }
@@ -826,7 +850,7 @@ GameStatus nivel2(Vector2 *posJugador, Texture2D fondo, int *coinsCollected, Tex
             if (mouseOver && IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
             {
                 *posJugador = player.position;
-                
+
                 UnloadTexture(coinTex);
                 return GAME_WON; // Regresar al menú de niveles
             }
@@ -846,12 +870,12 @@ GameStatus nivel2(Vector2 *posJugador, Texture2D fondo, int *coinsCollected, Tex
     }
 
     *posJugador = player.position;
-    
+
     UnloadTexture(coinTex);
     return GAME_CONTINUE;
 }
 
-GameStatus nivel3(Vector2 *posJugador, Texture2D fondo, int *coinsCollected, Texture2D jugadorTexture , int totalFrames)
+GameStatus nivel3(Vector2 *posJugador, Texture2D fondo, int *coinsCollected, Texture2D jugadorTexture, int totalFrames)
 {
     Player player = {0};
 
@@ -908,6 +932,10 @@ GameStatus nivel3(Vector2 *posJugador, Texture2D fondo, int *coinsCollected, Tex
     int lastCoinCollected = -1;
     bool gameOver = false;
     bool levelCompleted = false;
+
+    int currentAttempts = 0;     // Intentos actuales para la pregunta
+    const int MAX_ATTEMPTS = 2;  // Máximo 2 intentos por pregunta
+    bool questionFailed = false; // Si falló la pregunta después de 2 intentos
 
     int screenWidth = 1280;
     int screenHeight = 720;
@@ -1083,7 +1111,7 @@ GameStatus nivel3(Vector2 *posJugador, Texture2D fondo, int *coinsCollected, Tex
         if (IsKeyPressed(KEY_ESCAPE) && !showingQuestion && !levelCompleted)
         {
             *posJugador = player.position;
-            
+
             UnloadTexture(coinTex);
             return GAME_PAUSE;
         }
@@ -1104,7 +1132,7 @@ GameStatus nivel3(Vector2 *posJugador, Texture2D fondo, int *coinsCollected, Tex
         if (gameOver && feedbackTimer <= 0.0f)
         {
             *posJugador = player.position;
-            
+
             UnloadTexture(coinTex);
             return GAME_OVER;
         }
@@ -1227,7 +1255,7 @@ GameStatus nivel3(Vector2 *posJugador, Texture2D fondo, int *coinsCollected, Tex
             if (mouseOver && IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
             {
                 *posJugador = player.position;
-                
+
                 UnloadTexture(coinTex);
                 return GAME_WON; // Regresar al menú de niveles
             }
@@ -1247,7 +1275,7 @@ GameStatus nivel3(Vector2 *posJugador, Texture2D fondo, int *coinsCollected, Tex
     }
 
     *posJugador = player.position;
-    
+
     UnloadTexture(coinTex);
     return GAME_CONTINUE;
 }
