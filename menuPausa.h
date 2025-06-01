@@ -27,7 +27,7 @@ PausaOpcion menuPausa()
     DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(DARKGRAY, 0.050f));
 
     // Título
-    DrawText("JUEGO EN PAUSA", textX, 120, fontSize, RED);
+    DrawText("JUEGO EN PAUSA", textX, 120, fontSize, ORANGE);
 
     // Botones
     for (int i = 0; i < 3; i++)
