@@ -44,13 +44,14 @@ typedef enum
 } GameStatus;
 
 // Prototipos de funciones
-GameStatus nivel1(Vector2 *posJugador, Texture2D fondo, int *coinsCollected, Texture2D jugadorTexture, int totalFrames);
-GameStatus nivel2(Vector2 *posJugador, Texture2D fondo, int *coinsCollected, Texture2D jugadorTexture, int totalFrames);
-GameStatus nivel3(Vector2 *posJugador, Texture2D fondo, int *coinsCollected, Texture2D jugadorTexture, int totalFrames);
+GameStatus nivel1(Vector2 *posJugador, Texture2D fondo, int *coinsCollected, Texture2D jugadorTexture, int totalFrames, Music *gameMusic, bool *musicInitialized, int *currentMusicLevel);
+GameStatus nivel2(Vector2 *posJugador, Texture2D fondo, int *coinsCollected, Texture2D jugadorTexture, int totalFrames, Music *gameMusic, bool *musicInitialized, int *currentMusicLevel);
+GameStatus nivel3(Vector2 *posJugador, Texture2D fondo, int *coinsCollected, Texture2D jugadorTexture, int totalFrames, Music *gameMusic, bool *musicInitialized, int *currentMusicLevel);
+
 void DrawTiledPlatform(Texture2D texture, Rectangle platform);
 void PlayCoinSound(Sound coinSound);
 
-GameStatus nivel1(Vector2 *posJugador, Texture2D fondo, int *coinsCollected, Texture2D jugadorTexture, int totalFrames)
+GameStatus nivel1(Vector2 *posJugador, Texture2D fondo, int *coinsCollected, Texture2D jugadorTexture, int totalFrames, Music *gameMusic, bool *musicInitialized, int *currentMusicLevel)
 {
     Player player = {0};
 
@@ -58,6 +59,8 @@ GameStatus nivel1(Vector2 *posJugador, Texture2D fondo, int *coinsCollected, Tex
     Texture2D coinTex = LoadTexture("src/images/coin.png");
     Texture2D platformTex = LoadTexture("src/images/platform1.png");
     Texture2D dirtTex = LoadTexture("src/images/dirt.png");
+
+    Sound coinSound = LoadSound("src/sound/coin.mp3"); 
 
     // VERIFICAR SI LAS TEXTURAS SE CARGARON CORRECTAMENTE
     if (platformTex.id == 0)
@@ -83,11 +86,11 @@ GameStatus nivel1(Vector2 *posJugador, Texture2D fondo, int *coinsCollected, Tex
     player.canJump = false;
 
     EnvElement envElements[MAX_ENVIRONMENT_ELEMENTS] = {
-        //  X  Y  ancho  alto blocking  color
-        {{0, 0, 1280, 720}, 0, BLANK}, // Fondo completo (no bloqueante)
 
-        {{-1000, 600, 3000, 50}, 1, BLANK},  // Suelo
-        {{-1000, 650, 3000, 500}, 0, BLANK}, // Plataforma visual de tierra (no bloqueante)
+        {{0, 0, 1280, 720}, 0, BLANK},       // Fondo completo (no bloqueante)
+                                             //   X      Y   ancho  alto blocking  color
+        {{-1500, 600, 5000, 50}, 1, BLANK},  // Suelo
+        {{-1000, 650, 3500, 500}, 0, BLANK}, // Plataforma visual de tierra (no bloqueante)
 
         {{100, 500, 200, 50}, 1, BLANK},  // Plataforma 1 - centro
         {{280, 410, 200, 50}, 1, BLANK},  // Plataforma 2 - derecha
@@ -139,9 +142,12 @@ GameStatus nivel1(Vector2 *posJugador, Texture2D fondo, int *coinsCollected, Tex
 
     Camera2D camera = {0};
     camera.target = player.position;
-    camera.offset = (Vector2){screenWidth / 2.0f, screenHeight / 2.0f};
+    camera.offset = (Vector2){screenWidth / 2.0f, screenHeight / 1.5f};
     camera.rotation = 0.0f;
     camera.zoom = 1.0f;
+
+    float minCameraX = -1000 + screenWidth / 2.0f; // Left edge of ground + half screen width
+    float maxCameraX = 2000 - screenWidth / 2.0f;  // Right edge of ground - half screen width
 
     const float GRAVITY = 500;
     const float PLAYER_JUMP_SPD = 320.0f;
@@ -152,11 +158,12 @@ GameStatus nivel1(Vector2 *posJugador, Texture2D fondo, int *coinsCollected, Tex
     while (!WindowShouldClose())
     {
         float deltaTime = GetFrameTime();
+        UpdateMusicStream(*gameMusic);
 
         // Verificar si se han recolectado todas las monedas
         if (!levelCompleted && coinQuestionAnswered)
         {
-            int activeCoins = 0;
+            int activeCoins = 0; 
             for (int i = 0; i < MAX_COINS; i++)
             {
                 if (coins[i].active)
@@ -300,6 +307,7 @@ GameStatus nivel1(Vector2 *posJugador, Texture2D fondo, int *coinsCollected, Tex
             *posJugador = player.position;
             UnloadTexture(coinTex);
             UnloadTexture(platformTex); // No olvides liberar la textura
+            UnloadSound(coinSound); // Unload sound
             UnloadTexture(dirtTex);
             return GAME_PAUSE;
         }
@@ -327,6 +335,7 @@ GameStatus nivel1(Vector2 *posJugador, Texture2D fondo, int *coinsCollected, Tex
             *posJugador = player.position;
             UnloadTexture(coinTex);
             UnloadTexture(platformTex); // No olvides liberar la textura
+            UnloadSound(coinSound); // Unload sound
             UnloadTexture(dirtTex);
             return GAME_OVER;
         }
@@ -334,7 +343,9 @@ GameStatus nivel1(Vector2 *posJugador, Texture2D fondo, int *coinsCollected, Tex
         if (!gameOver && !levelCompleted)
         {
             camera.target = player.position;
-            camera.offset = (Vector2){screenWidth / 2.0f, screenHeight / 2.0f};
+            // Clamp camera target to level boundaries
+            camera.target.x = fmaxf(minCameraX, fminf(maxCameraX, camera.target.x));
+            camera.offset = (Vector2){screenWidth / 2.0f, screenHeight / 1.5f};
         }
 
         BeginDrawing();
@@ -438,6 +449,7 @@ GameStatus nivel1(Vector2 *posJugador, Texture2D fondo, int *coinsCollected, Tex
                         questionFailed = false;
                         showingQuestion = false;
                         feedbackTimer = FEEDBACK_DURATION;
+                        PlayCoinSound(coinSound);
                     }
                     else
                     {
@@ -500,6 +512,7 @@ GameStatus nivel1(Vector2 *posJugador, Texture2D fondo, int *coinsCollected, Tex
                 *posJugador = player.position;
                 UnloadTexture(coinTex);
                 UnloadTexture(platformTex); // No olvides liberar la textura
+                UnloadSound(coinSound); // Unload sound
                 UnloadTexture(dirtTex);
                 return GAME_WON;
             }
@@ -524,7 +537,7 @@ GameStatus nivel1(Vector2 *posJugador, Texture2D fondo, int *coinsCollected, Tex
     return GAME_CONTINUE;
 }
 
-GameStatus nivel2(Vector2 *posJugador, Texture2D fondo, int *coinsCollected, Texture2D jugadorTexture, int totalFrames)
+GameStatus nivel2(Vector2 *posJugador, Texture2D fondo, int *coinsCollected, Texture2D jugadorTexture, int totalFrames, Music *gameMusic, bool *musicInitialized, int *currentMusicLevel)
 {
     Player player = {0};
 
@@ -532,6 +545,8 @@ GameStatus nivel2(Vector2 *posJugador, Texture2D fondo, int *coinsCollected, Tex
     Texture2D coinTex = LoadTexture("src/images/coin.png");
     Texture2D platformTex = LoadTexture("src/images/platform2.png");
     Texture2D dirtTex = LoadTexture("src/images/dirt2.png");
+    Sound coinSound = LoadSound("src/sound/coin.mp3"); 
+
 
     // VERIFICAR SI LAS TEXTURAS SE CARGARON CORRECTAMENTE
     if (platformTex.id == 0)
@@ -557,11 +572,11 @@ GameStatus nivel2(Vector2 *posJugador, Texture2D fondo, int *coinsCollected, Tex
     player.canJump = false;
 
     EnvElement envElements[MAX_ENVIRONMENT_ELEMENTS] = {
-        //  X  Y  ancho  alto blocking  color
+    
         {{0, 0, 1280, 720}, 0, BLANK}, // Fondo completo (no bloqueante)
-
-        {{-1000, 600, 3000, 50}, 1, BLANK},  // Suelo
-        {{-1000, 650, 3000, 500}, 0, BLANK}, // Plataforma visual de tierra (no bloqueante)
+     //   X      Y   ancho  alto blocking  color
+        {{-1500, 600, 5000, 50}, 1, BLANK},  // Suelo
+        {{-1000, 650, 3500, 500}, 0, BLANK}, // Plataforma visual de tierra (no bloqueante)
 
         {{150, 500, 200, 50}, 1, BLANK},  // Plataforma 1 - BLANK para que no se vea el rectángulo
         {{450, 400, 200, 50}, 1, BLANK},  // Plataforma 2 - centro
@@ -613,9 +628,12 @@ GameStatus nivel2(Vector2 *posJugador, Texture2D fondo, int *coinsCollected, Tex
 
     Camera2D camera = {0};
     camera.target = player.position;
-    camera.offset = (Vector2){screenWidth / 2.0f, screenHeight / 2.0f};
+    camera.offset = (Vector2){screenWidth / 2.0f, screenHeight / 1.5f};
     camera.rotation = 0.0f;
     camera.zoom = 1.0f;
+
+    float minCameraX = -1000 + screenWidth / 2.0f; // Left edge of ground + half screen width
+    float maxCameraX = 2000 - screenWidth / 2.0f;  // Right edge of ground - half screen width
 
     const float GRAVITY = 500;
     const float PLAYER_JUMP_SPD = 320.0f;
@@ -626,6 +644,7 @@ GameStatus nivel2(Vector2 *posJugador, Texture2D fondo, int *coinsCollected, Tex
     while (!WindowShouldClose())
     {
         float deltaTime = GetFrameTime();
+        UpdateMusicStream(*gameMusic);
 
         // Verificar si se han recolectado todas las monedas
         if (!levelCompleted && coinQuestionAnswered)
@@ -774,6 +793,7 @@ GameStatus nivel2(Vector2 *posJugador, Texture2D fondo, int *coinsCollected, Tex
             *posJugador = player.position;
             UnloadTexture(coinTex);
             UnloadTexture(platformTex); // No olvides liberar la textura
+            UnloadSound(coinSound); // Unload sound
             UnloadTexture(dirtTex);
             return GAME_PAUSE;
         }
@@ -801,14 +821,17 @@ GameStatus nivel2(Vector2 *posJugador, Texture2D fondo, int *coinsCollected, Tex
             *posJugador = player.position;
             UnloadTexture(coinTex);
             UnloadTexture(platformTex); // No olvides liberar la textura
+            UnloadSound(coinSound); // Unload sound
             UnloadTexture(dirtTex);
             return GAME_OVER;
         }
 
-        if (!gameOver && !levelCompleted)
+         if (!gameOver && !levelCompleted)
         {
             camera.target = player.position;
-            camera.offset = (Vector2){screenWidth / 2.0f, screenHeight / 2.0f};
+            // Clamp camera target to level boundaries
+            camera.target.x = fmaxf(minCameraX, fminf(maxCameraX, camera.target.x));
+            camera.offset = (Vector2){screenWidth / 2.0f, screenHeight / 1.5f};
         }
 
         BeginDrawing();
@@ -912,6 +935,8 @@ GameStatus nivel2(Vector2 *posJugador, Texture2D fondo, int *coinsCollected, Tex
                         questionFailed = false;
                         showingQuestion = false;
                         feedbackTimer = FEEDBACK_DURATION;
+                        PlayCoinSound(coinSound);
+
                     }
                     else
                     {
@@ -974,6 +999,7 @@ GameStatus nivel2(Vector2 *posJugador, Texture2D fondo, int *coinsCollected, Tex
                 *posJugador = player.position;
                 UnloadTexture(coinTex);
                 UnloadTexture(platformTex); // No olvides liberar la textura
+                UnloadSound(coinSound); // Unload sound
                 UnloadTexture(dirtTex);
                 return GAME_WON;
             }
@@ -998,26 +1024,15 @@ GameStatus nivel2(Vector2 *posJugador, Texture2D fondo, int *coinsCollected, Tex
     return GAME_CONTINUE;
 }
 
-GameStatus nivel3(Vector2 *posJugador, Texture2D fondo, int *coinsCollected, Texture2D jugadorTexture, int totalFrames)
+GameStatus nivel3(Vector2 *posJugador, Texture2D fondo, int *coinsCollected, Texture2D jugadorTexture, int totalFrames, Music *gameMusic, bool *musicInitialized, int *currentMusicLevel)
 {
     Player player = {0};
 
     Texture2D jugadorTex = jugadorTexture;
     Texture2D coinTex = LoadTexture("src/images/coin.png");
     Texture2D platformTex = LoadTexture("src/images/platform3.png");
-    Texture2D dirtTex = LoadTexture("src/images/brick3.png");
-
-    // VERIFICAR SI LAS TEXTURAS SE CARGARON CORRECTAMENTE
-    if (platformTex.id == 0)
-    {
-        printf("Error: No se pudo cargar platform1.png\n");
-        // Usar un color por defecto si no se carga la textura
-    }
-
-    if (coinTex.id == 0)
-    {
-        printf("Error: No se pudo cargar coin.png\n");
-    }
+    Texture2D dirtTex = LoadTexture("src/images/dirt3.png");
+    Sound coinSound = LoadSound("src/sound/coin.mp3"); 
 
     int currentFrame = 0;
     float frameWidth = jugadorTex.width / totalFrames;
@@ -1030,28 +1045,28 @@ GameStatus nivel3(Vector2 *posJugador, Texture2D fondo, int *coinsCollected, Tex
     player.speed = 0;
     player.canJump = false;
 
-    EnvElement envElements[MAX_ENVIRONMENT_ELEMENTS] = {
-        //  X  Y  ancho  alto blocking  color
+   EnvElement envElements[MAX_ENVIRONMENT_ELEMENTS] = {
+    
         {{0, 0, 1280, 720}, 0, BLANK}, // Fondo completo (no bloqueante)
+     //   X      Y   ancho  alto blocking  color
+        {{-1500, 600, 5000, 50}, 1, BLANK},  // Suelo
+        {{-1000, 650, 3500, 500}, 0, BLANK}, // Plataforma visual de tierra (no bloqueante)
 
-        {{-1000, 600, 3000, 50}, 1, BLANK},  // Suelo
-        {{-1000, 650, 3000, 500}, 0, BLANK}, // Plataforma visual de tierra (no bloqueante)
-
-        {{150, 500, 100, 30}, 1, BLANK},    // Plataforma
-        {{450, 420, 100, 30}, 1, BLANK},    // Plataforma
-        {{250, 340, 80, 30}, 1, BLANK},     // Plataforma
-        {{420, 260, 80, 30}, 1, BLANK},     // Plataforma
-        {{180, 180, 100, 30}, 1, BLANK},    // Plataforma
-        {{380, 100, 120, 30}, 1, BLANK}};   // Plataforma
+        {{150, 500, 80, 30}, 1, BLANK},    // Plataforma 1
+        {{440, 420, 80, 30}, 1, BLANK},    // Plataforma 2
+        {{250, 340, 80, 30}, 1, BLANK},     // Plataforma 3
+        {{420, 260, 80, 30}, 1, BLANK},     // Plataforma 4
+        {{180, 180, 80, 30}, 1, BLANK},    // Plataforma 5
+        {{380, 100, 80, 30}, 1, BLANK}};   // Plataforma 6
 
     Coin coins[MAX_COINS] = {
-        // pos    X     Y   Activo   X   Y  ancho  largo
-        {{165, 440}, true, {165, 440, 30, 30}},  // Platforma 1 
-        {{465, 360}, true, {465, 360, 30, 30}},  // Platforma 2 
+ // pos    X     Y   Activo   X   Y  ancho  largo
+        {{160, 440}, true, {165, 440, 30, 30}},  // Platforma 1 
+        {{450, 360}, true, {465, 360, 30, 30}},  // Platforma 2 
         {{255, 280}, true, {255, 280, 30, 30}},  // Platforma 3 
         {{425, 200}, true, {425, 200, 30, 30}},  // Platforma 4 
         {{195, 120}, true, {195, 120, 30, 30}},  // Platforma 5
-        {{430, 40}, true, {430, 40, 30, 30}}};   // Platforma 6 
+        {{400, 40}, true, {400, 40, 30, 30}}};   // Platforma 6 
 
     Question questions[MAX_QUESTIONS] = {
         // Pregunta               Opciones       Posicion de respuesta correcta
@@ -1087,9 +1102,12 @@ GameStatus nivel3(Vector2 *posJugador, Texture2D fondo, int *coinsCollected, Tex
 
     Camera2D camera = {0};
     camera.target = player.position;
-    camera.offset = (Vector2){screenWidth / 2.0f, screenHeight / 2.0f};
+    camera.offset = (Vector2){screenWidth / 2.0f, screenHeight / 1.5f};
     camera.rotation = 0.0f;
     camera.zoom = 1.0f;
+
+    float minCameraX = -1000 + screenWidth / 2.0f; // Left edge of ground + half screen width
+    float maxCameraX = 2000 - screenWidth / 2.0f;  // Right edge of ground - half screen width
 
     const float GRAVITY = 500;
     const float PLAYER_JUMP_SPD = 320.0f;
@@ -1100,6 +1118,7 @@ GameStatus nivel3(Vector2 *posJugador, Texture2D fondo, int *coinsCollected, Tex
     while (!WindowShouldClose())
     {
         float deltaTime = GetFrameTime();
+        UpdateMusicStream(*gameMusic);
 
         // Verificar si se han recolectado todas las monedas
         if (!levelCompleted && coinQuestionAnswered)
@@ -1180,6 +1199,7 @@ GameStatus nivel3(Vector2 *posJugador, Texture2D fondo, int *coinsCollected, Tex
                     coins[i].active = false;
                     (*coinsCollected)++;
                     showingQuestion = true;
+
                     do
                     {
                         currentQuestion = GetRandomValue(0, MAX_QUESTIONS - 1);
@@ -1247,6 +1267,7 @@ GameStatus nivel3(Vector2 *posJugador, Texture2D fondo, int *coinsCollected, Tex
             *posJugador = player.position;
             UnloadTexture(coinTex);
             UnloadTexture(platformTex); // No olvides liberar la textura
+            UnloadSound(coinSound); // Unload sound
             UnloadTexture(dirtTex);
             return GAME_PAUSE;
         }
@@ -1274,6 +1295,7 @@ GameStatus nivel3(Vector2 *posJugador, Texture2D fondo, int *coinsCollected, Tex
             *posJugador = player.position;
             UnloadTexture(coinTex);
             UnloadTexture(platformTex); // No olvides liberar la textura
+            UnloadSound(coinSound); // Unload sound
             UnloadTexture(dirtTex);
             return GAME_OVER;
         }
@@ -1281,7 +1303,9 @@ GameStatus nivel3(Vector2 *posJugador, Texture2D fondo, int *coinsCollected, Tex
         if (!gameOver && !levelCompleted)
         {
             camera.target = player.position;
-            camera.offset = (Vector2){screenWidth / 2.0f, screenHeight / 2.0f};
+            // Clamp camera target to level boundaries
+            camera.target.x = fmaxf(minCameraX, fminf(maxCameraX, camera.target.x));
+            camera.offset = (Vector2){screenWidth / 2.0f, screenHeight / 1.5f};
         }
 
         BeginDrawing();
@@ -1385,6 +1409,7 @@ GameStatus nivel3(Vector2 *posJugador, Texture2D fondo, int *coinsCollected, Tex
                         questionFailed = false;
                         showingQuestion = false;
                         feedbackTimer = FEEDBACK_DURATION;
+                        PlayCoinSound(coinSound);
                     }
                     else
                     {
@@ -1467,6 +1492,7 @@ GameStatus nivel3(Vector2 *posJugador, Texture2D fondo, int *coinsCollected, Tex
     *posJugador = player.position;
     UnloadTexture(platformTex);
     UnloadTexture(coinTex);
+    UnloadSound(coinSound); // Unload sound
     UnloadTexture(dirtTex);
     return GAME_CONTINUE;
 }
@@ -1505,6 +1531,10 @@ void PlayCoinSound(Sound coinSound)
     if (IsAudioDeviceReady())  
     {
         PlaySound(coinSound);
+        SetSoundVolume(coinSound, 0.1f);
+
     }
 }
+
+
 

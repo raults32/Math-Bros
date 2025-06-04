@@ -57,13 +57,13 @@ int main()
     Music gameMusic;
     bool musicInitialized = false;
     int currentMusicLevel = 0;
-    InitAudioDevice(); 
+    InitAudioDevice();
     gameMusic = LoadMusicStream("src/sound/main.mp3");
     musicInitialized = true;
-    SetMusicVolume(gameMusic, 0.5f); 
+    SetMusicVolume(gameMusic, 0.1f);
     PlayMusicStream(gameMusic);
 
-    //icono
+    // icono
     Image icon = LoadImage("src/images/icon.png"); // Carga la imagen del icono
     SetWindowIcon(icon);                           // Establece el icono de la ventana
     UnloadImage(icon);                             // Libera la imagen del icono de la memoria
@@ -111,15 +111,15 @@ int main()
 
     SetExitKey(0); // Desactiva la tecla de salida (ESC) para evitar cerrar la ventana
 
-    Image fondo = LoadImage("src/images/op1.jpg"); // Carga la imagen del fondo
-    ImageResize(&fondo, screenWidth, screenHeight);      // Redimensiona la imagen del fondo al tamaño de la ventana
-    fondoTexture = LoadTextureFromImage(fondo);          // Convierte la imagen a textura
-    UnloadImage(fondo);                                  // Libera la imagen de memoria
+    Image fondo = LoadImage("src/images/op1.jpg");  // Carga la imagen del fondo
+    ImageResize(&fondo, screenWidth, screenHeight); // Redimensiona la imagen del fondo al tamaño de la ventana
+    fondoTexture = LoadTextureFromImage(fondo);     // Convierte la imagen a textura
+    UnloadImage(fondo);                             // Libera la imagen de memoria
 
     Image shop = LoadImage("src/images/shop.jpg"); // Carga la imagen del fondo
-    ImageResize(&shop, screenWidth, screenHeight);      // Redimensiona la imagen del fondo al tamaño de la ventana
-    shop_texture = LoadTextureFromImage(shop);          // Convierte la imagen a textura
-    UnloadImage(shop);                                  // Libera la imagen de memoria
+    ImageResize(&shop, screenWidth, screenHeight); // Redimensiona la imagen del fondo al tamaño de la ventana
+    shop_texture = LoadTextureFromImage(shop);     // Convierte la imagen a textura
+    UnloadImage(shop);                             // Libera la imagen de memoria
 
     SetTargetFPS(60); // Establece la tasa de fotogramas por segundo
 
@@ -220,10 +220,11 @@ int main()
         //**********************************************************************************
         case MENU_JUEGO:
         {
-            UpdateMusic(gameMusic, musicInitialized, currentMusicLevel, 1);
             static bool juegoPausado = false;
+
             if (juegoPausado)
             {
+
                 if (IsKeyPressed(KEY_ESCAPE))
                 {
                     juegoPausado = false;
@@ -250,8 +251,8 @@ int main()
             }
             else
             {
-                GameStatus status = nivel1(&posicionJugador, fondosNiveles[nivelActual], &coinsCollected, colors[selectedColorIndex].fullTexture, colors[selectedColorIndex].frames);
                 UpdateMusic(gameMusic, musicInitialized, currentMusicLevel, 1);
+                GameStatus status = nivel1(&posicionJugador, fondosNiveles[nivelActual], &coinsCollected, colors[selectedColorIndex].fullTexture, colors[selectedColorIndex].frames, &gameMusic, &musicInitialized, &currentMusicLevel);
                 if (IsKeyPressed(KEY_ESCAPE)) // Permitir pausa en cualquier momento
                 {
                     juegoPausado = true;
@@ -280,7 +281,6 @@ int main()
         case MENU_JUEGO2:
         {
             static bool juegoPausado = false;
-            UpdateMusic(gameMusic, musicInitialized, currentMusicLevel, 2);
             if (juegoPausado)
             {
                 if (IsKeyPressed(KEY_ESCAPE))
@@ -309,8 +309,8 @@ int main()
             }
             else
             {
-                GameStatus status = nivel2(&posicionJugador, fondosNiveles[nivelActual], &coinsCollected, colors[selectedColorIndex].fullTexture, colors[selectedColorIndex].frames);
                 UpdateMusic(gameMusic, musicInitialized, currentMusicLevel, 2);
+                GameStatus status = nivel2(&posicionJugador, fondosNiveles[nivelActual], &coinsCollected, colors[selectedColorIndex].fullTexture, colors[selectedColorIndex].frames, &gameMusic, &musicInitialized, &currentMusicLevel);
                 if (IsKeyPressed(KEY_ESCAPE)) // Permitir pausa en cualquier momento
                 {
                     juegoPausado = true;
@@ -338,7 +338,6 @@ int main()
         //**********************************************************************************
         case MENU_JUEGO3:
         {
-            UpdateMusic(gameMusic, musicInitialized, currentMusicLevel, 3);
             static bool juegoPausado = false;
             if (juegoPausado)
             {
@@ -368,8 +367,8 @@ int main()
             }
             else
             {
-                GameStatus status = nivel3(&posicionJugador, fondosNiveles[nivelActual], &coinsCollected, colors[selectedColorIndex].fullTexture, colors[selectedColorIndex].frames);
                 UpdateMusic(gameMusic, musicInitialized, currentMusicLevel, 3);
+                GameStatus status = nivel3(&posicionJugador, fondosNiveles[nivelActual], &coinsCollected, colors[selectedColorIndex].fullTexture, colors[selectedColorIndex].frames, &gameMusic, &musicInitialized, &currentMusicLevel);
                 if (status == GAME_PAUSE)
                 {
                     juegoPausado = true;
@@ -552,33 +551,41 @@ bool DrawBuyButton(const char *text, int price, bool unlocked, int posX, int pos
 
 void UpdateMusic(Music &gameMusic, bool &musicInitialized, int &currentMusicLevel, int level)
 {
-    if (!musicInitialized) return;
-    
+    if (!musicInitialized)
+        return;
+
     if (level != currentMusicLevel)
     {
         StopMusicStream(gameMusic);
         UnloadMusicStream(gameMusic);
-        
-        switch(level)
+
+        switch (level)
         {
-            case 0: // Main menu
-                gameMusic = LoadMusicStream("src/sound/main.mp3");
-                break;
-            case 1: // Level 1
-                gameMusic = LoadMusicStream("src/sound/level1.mp3");
-                break;
-            case 2: // Level 2
-                gameMusic = LoadMusicStream("src/sound/level2.mp3");
-                break;
-            case 3: // Level 3
-                gameMusic = LoadMusicStream("src/sound/level3.mp3");
-                break;
-            default:
-                gameMusic = LoadMusicStream("src/sound/main.mp3");
+        case 0: // Main menu
+            gameMusic = LoadMusicStream("src/sound/main.mp3");
+            SetMusicVolume(gameMusic, 0.1f);
+            break;
+        case 1: // Level 1
+            gameMusic = LoadMusicStream("src/sound/level1.mp3");
+            SetMusicVolume(gameMusic, 0.1f);
+
+            break;
+        case 2: // Level 2
+            gameMusic = LoadMusicStream("src/sound/level2.mp3");
+            SetMusicVolume(gameMusic, 0.1f);
+
+            break;
+        case 3: // Level 3
+            gameMusic = LoadMusicStream("src/sound/level3.mp3");
+            SetMusicVolume(gameMusic, 0.1f);
+
+            break;
+        default:
+            gameMusic = LoadMusicStream("src/sound/main.mp3");
+            SetMusicVolume(gameMusic, 0.1f);
         }
         currentMusicLevel = level;
         PlayMusicStream(gameMusic);
     }
     UpdateMusicStream(gameMusic);
 }
-
