@@ -48,6 +48,7 @@ GameStatus nivel1(Vector2 *posJugador, Texture2D fondo, int *coinsCollected, Tex
 GameStatus nivel2(Vector2 *posJugador, Texture2D fondo, int *coinsCollected, Texture2D jugadorTexture, int totalFrames);
 GameStatus nivel3(Vector2 *posJugador, Texture2D fondo, int *coinsCollected, Texture2D jugadorTexture, int totalFrames);
 void DrawTiledPlatform(Texture2D texture, Rectangle platform);
+void PlayCoinSound(Sound coinSound);
 
 GameStatus nivel1(Vector2 *posJugador, Texture2D fondo, int *coinsCollected, Texture2D jugadorTexture, int totalFrames)
 {
@@ -88,34 +89,34 @@ GameStatus nivel1(Vector2 *posJugador, Texture2D fondo, int *coinsCollected, Tex
         {{-1000, 600, 3000, 50}, 1, BLANK},  // Suelo
         {{-1000, 650, 3000, 500}, 0, BLANK}, // Plataforma visual de tierra (no bloqueante)
 
-        {{150, 500, 200, 50}, 1, BLANK},  // Plataforma 1 - BLANK para que no se vea el rectángulo
-        {{450, 400, 200, 50}, 1, BLANK},  // Plataforma 2 - centro
-        {{750, 300, 200, 50}, 1, BLANK},  // Plataforma 3 - derecha
-        {{350, 250, 200, 50}, 1, BLANK},  // Plataforma 4 - centro-izquierda
-        {{650, 150, 200, 50}, 1, BLANK},  // Plataforma 5 - centro-derecha
-        {{950, 120, 200, 50}, 1, BLANK}}; // Plataforma 6 - derecha alta
+        {{100, 500, 200, 50}, 1, BLANK},  // Plataforma 1 - centro
+        {{280, 410, 200, 50}, 1, BLANK},  // Plataforma 2 - derecha
+        {{460, 320, 200, 50}, 1, BLANK},  // Plataforma 3 - derecha
+        {{640, 230, 200, 50}, 1, BLANK},  // Plataforma 4 - derecha
+        {{820, 140, 200, 50}, 1, BLANK},  // Plataforma 5 - derecha
+        {{1000, 50, 200, 50}, 1, BLANK}}; // Plataforma 6 - derecha alta
 
     Coin coins[MAX_COINS] = {
         // pos    X     Y   Activo   X   Y  ancho  largo
-        {{210, 440}, true, {210, 440, 30, 30}},  // Plataforma 1
-        {{510, 340}, true, {510, 340, 30, 30}},  // Plataforma 2
-        {{810, 240}, true, {810, 240, 30, 30}},  // Plataforma 3
-        {{410, 190}, true, {410, 190, 30, 30}},  // Plataforma 4
-        {{710, 90}, true, {710, 80, 30, 30}},    // Plataforma 5
-        {{1010, 60}, true, {1010, 60, 30, 30}}}; // Plataforma 6
+        {{165, 440}, true, {165, 440, 30, 30}},    // moneda 1
+        {{345, 350}, true, {345, 350, 30, 30}},    // moneda 2
+        {{525, 260}, true, {525, 260, 30, 30}},    // moneda 3
+        {{705, 170}, true, {705, 170, 30, 30}},    // moneda 4
+        {{885, 80}, true, {885, 80, 30, 30}},      // moneda 5
+        {{1065, -10}, true, {1065, -10, 30, 30}}}; // moneda 6
 
     Question questions[MAX_QUESTIONS] = {
         // Pregunta               Opciones       Posicion de respuesta correcta
-        {"¿Cuánto es 15 + 27?", {"32", "42", "37", "45"}, 1},
+        {"¿Cuánto es 7 x 7?", {"32", "42", "49", "45"}, 2},
         {"¿Cuánto es 8 x 6?", {"42", "48", "54", "56"}, 1},
-        {"¿Cuánto es 56 ÷ 7?", {"7", "8", "6", "9"}, 1},
+        {"¿Cuánto es 5 x 10", {"35", "40", "45", "50"}, 3},
         {"¿Cuánto es 45 - 19?", {"26", "24", "28", "30"}, 0},
         {"¿Cuánto es 9 x 4?", {"32", "36", "40", "45"}, 1},
-        {"¿Cuánto es 72 ÷ 9?", {"7", "8", "9", "10"}, 1},
+        {"¿Cuánto es 6 x 9?", {"69", "54", "40", "96"}, 1},
         {"¿Cuánto es 23 + 48?", {"69", "70", "71", "72"}, 2},
-        {"¿Cuánto es 7 x 8?", {"54", "56", "58", "60"}, 1},
+        {"¿Cuánto es 7 x 3?", {"7", "14", "28", "21"}, 3},
         {"¿Cuánto es 64 - 29?", {"33", "34", "35", "36"}, 2},
-        {"¿Cuánto es 81 ÷ 9?", {"7", "8", "9", "10"}, 2}};
+        {"¿Cuánto es 9 x 3?", {"18", "15", "27", "20"}, 2}};
 
     bool showingQuestion = false;
     int currentQuestion = -1;
@@ -580,15 +581,15 @@ GameStatus nivel2(Vector2 *posJugador, Texture2D fondo, int *coinsCollected, Tex
 
     Question questions[MAX_QUESTIONS] = {
         // Pregunta               Opciones       Posicion de respuesta correcta
-        {"¿Cuánto es 15 + 27?", {"32", "42", "37", "45"}, 1},
-        {"¿Cuánto es 8 x 6?", {"42", "48", "54", "56"}, 1},
+        {"¿Cuánto es 140 + 23?", {"163", "124", "160", "180"}, 0},
+        {"¿Cuánto es 312 + 50?", {"560", "480", "362", "563"}, 2},
         {"¿Cuánto es 56 ÷ 7?", {"7", "8", "6", "9"}, 1},
         {"¿Cuánto es 45 - 19?", {"26", "24", "28", "30"}, 0},
         {"¿Cuánto es 9 x 4?", {"32", "36", "40", "45"}, 1},
         {"¿Cuánto es 72 ÷ 9?", {"7", "8", "9", "10"}, 1},
         {"¿Cuánto es 23 + 48?", {"69", "70", "71", "72"}, 2},
         {"¿Cuánto es 7 x 8?", {"54", "56", "58", "60"}, 1},
-        {"¿Cuánto es 64 - 29?", {"33", "34", "35", "36"}, 2},
+        {"¿Cuánto es 64 - 30?", {"33", "34", "35", "36"}, 1},
         {"¿Cuánto es 81 ÷ 9?", {"7", "8", "9", "10"}, 2}};
 
     bool showingQuestion = false;
@@ -1003,8 +1004,8 @@ GameStatus nivel3(Vector2 *posJugador, Texture2D fondo, int *coinsCollected, Tex
 
     Texture2D jugadorTex = jugadorTexture;
     Texture2D coinTex = LoadTexture("src/images/coin.png");
-    Texture2D platformTex = LoadTexture("src/images/platform1.png");
-    Texture2D dirtTex = LoadTexture("src/images/dirt.png");
+    Texture2D platformTex = LoadTexture("src/images/platform3.png");
+    Texture2D dirtTex = LoadTexture("src/images/brick3.png");
 
     // VERIFICAR SI LAS TEXTURAS SE CARGARON CORRECTAMENTE
     if (platformTex.id == 0)
@@ -1036,34 +1037,34 @@ GameStatus nivel3(Vector2 *posJugador, Texture2D fondo, int *coinsCollected, Tex
         {{-1000, 600, 3000, 50}, 1, BLANK},  // Suelo
         {{-1000, 650, 3000, 500}, 0, BLANK}, // Plataforma visual de tierra (no bloqueante)
 
-        {{150, 500, 200, 50}, 1, BLANK},  // Plataforma 1 - BLANK para que no se vea el rectángulo
-        {{450, 400, 200, 50}, 1, BLANK},  // Plataforma 2 - centro
-        {{750, 300, 200, 50}, 1, BLANK},  // Plataforma 3 - derecha
-        {{350, 250, 200, 50}, 1, BLANK},  // Plataforma 4 - centro-izquierda
-        {{650, 150, 200, 50}, 1, BLANK},  // Plataforma 5 - centro-derecha
-        {{950, 120, 200, 50}, 1, BLANK}}; // Plataforma 6 - derecha alta
+        {{150, 500, 100, 30}, 1, BLANK},    // Plataforma
+        {{450, 420, 100, 30}, 1, BLANK},    // Plataforma
+        {{250, 340, 80, 30}, 1, BLANK},     // Plataforma
+        {{420, 260, 80, 30}, 1, BLANK},     // Plataforma
+        {{180, 180, 100, 30}, 1, BLANK},    // Plataforma
+        {{380, 100, 120, 30}, 1, BLANK}};   // Plataforma
 
     Coin coins[MAX_COINS] = {
         // pos    X     Y   Activo   X   Y  ancho  largo
-        {{210, 440}, true, {210, 440, 30, 30}},  // Plataforma 1
-        {{510, 340}, true, {510, 340, 30, 30}},  // Plataforma 2
-        {{810, 240}, true, {810, 240, 30, 30}},  // Plataforma 3
-        {{410, 190}, true, {410, 190, 30, 30}},  // Plataforma 4
-        {{710, 90}, true, {710, 80, 30, 30}},    // Plataforma 5
-        {{1010, 60}, true, {1010, 60, 30, 30}}}; // Plataforma 6
+        {{165, 440}, true, {165, 440, 30, 30}},  // Platforma 1 
+        {{465, 360}, true, {465, 360, 30, 30}},  // Platforma 2 
+        {{255, 280}, true, {255, 280, 30, 30}},  // Platforma 3 
+        {{425, 200}, true, {425, 200, 30, 30}},  // Platforma 4 
+        {{195, 120}, true, {195, 120, 30, 30}},  // Platforma 5
+        {{430, 40}, true, {430, 40, 30, 30}}};   // Platforma 6 
 
     Question questions[MAX_QUESTIONS] = {
         // Pregunta               Opciones       Posicion de respuesta correcta
-        {"¿Cuánto es 15 + 27?", {"32", "42", "37", "45"}, 1},
-        {"¿Cuánto es 8 x 6?", {"42", "48", "54", "56"}, 1},
-        {"¿Cuánto es 56 ÷ 7?", {"7", "8", "6", "9"}, 1},
-        {"¿Cuánto es 45 - 19?", {"26", "24", "28", "30"}, 0},
-        {"¿Cuánto es 9 x 4?", {"32", "36", "40", "45"}, 1},
-        {"¿Cuánto es 72 ÷ 9?", {"7", "8", "9", "10"}, 1},
-        {"¿Cuánto es 23 + 48?", {"69", "70", "71", "72"}, 2},
-        {"¿Cuánto es 7 x 8?", {"54", "56", "58", "60"}, 1},
-        {"¿Cuánto es 64 - 29?", {"33", "34", "35", "36"}, 2},
-        {"¿Cuánto es 81 ÷ 9?", {"7", "8", "9", "10"}, 2}};
+        {"¿Cuánto es 145 + 145?", {"413", "290", "323", "433"}, 1},
+        {"¿Cuánto es 16 x 4?", {"56", "64", "48", "72"}, 1},
+        {"¿Cuánto es 25 x 3?", {"25", "50", "75", "100"}, 2},
+        {"¿Cuánto es 532 - 200?", {"254", "264", "332", "244"}, 2},
+        {"¿Cuánto es 23 x 3?", {"66", "59", "69", "72"}, 2},
+        {"¿Cuánto es 89 + 120?", {"209", "194", "180", "141"}, 0},
+        {"¿Cuánto es 300 + 285?", {"622", "632", "585", "642"}, 2},
+        {"¿Cuánto es 18 x 2?", {"30", "36", "25", "40"}, 1},
+        {"¿Cuánto es 700 - 350?", {"350", "437", "447", "337"}, 0},
+        {"¿Cuánto es 108 - 9 + 3?", {"90", "93", "102", "99"}, 2}};
 
     bool showingQuestion = false;
     int currentQuestion = -1;
@@ -1179,7 +1180,6 @@ GameStatus nivel3(Vector2 *posJugador, Texture2D fondo, int *coinsCollected, Tex
                     coins[i].active = false;
                     (*coinsCollected)++;
                     showingQuestion = true;
-
                     do
                     {
                         currentQuestion = GetRandomValue(0, MAX_QUESTIONS - 1);
@@ -1499,3 +1499,12 @@ void DrawTiledPlatform(Texture2D texture, Rectangle platform)
         }
     }
 }
+
+void PlayCoinSound(Sound coinSound)
+{
+    if (IsAudioDeviceReady())  
+    {
+        PlaySound(coinSound);
+    }
+}
+

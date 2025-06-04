@@ -6,7 +6,6 @@
 
 #define NUM_NIVELES 3
 #define NUM_COLORS 5
-
 // Cambio de pantalla
 enum Pantalla
 {
@@ -37,6 +36,7 @@ typedef struct
 // Función para dibujar botones de compra
 
 bool DrawBuyButton(const char *text, int price, bool unlocked, int posX, int posY, int *coins);
+void UpdateMusic(Music &gameMusic, bool &musicInitialized, int &currentMusicLevel, int level);
 
 int main()
 {
@@ -50,8 +50,20 @@ int main()
     int posinicialY = 550;
 
     Texture2D fondoTexture;
+    Texture2D shop_texture;
     InitWindow(screenWidth, screenHeight, "Math Bros"); // Inicializa la ventana con un tamaño de 1280x720 y el título "Math Bros"
 
+    // add music
+    Music gameMusic;
+    bool musicInitialized = false;
+    int currentMusicLevel = 0;
+    InitAudioDevice(); 
+    gameMusic = LoadMusicStream("src/sound/main.mp3");
+    musicInitialized = true;
+    SetMusicVolume(gameMusic, 0.5f); 
+    PlayMusicStream(gameMusic);
+
+    //icono
     Image icon = LoadImage("src/images/icon.png"); // Carga la imagen del icono
     SetWindowIcon(icon);                           // Establece el icono de la ventana
     UnloadImage(icon);                             // Libera la imagen del icono de la memoria
@@ -99,10 +111,15 @@ int main()
 
     SetExitKey(0); // Desactiva la tecla de salida (ESC) para evitar cerrar la ventana
 
-    Image fondo = LoadImage("src/images/fondotest.png"); // Carga la imagen del fondo
+    Image fondo = LoadImage("src/images/op1.jpg"); // Carga la imagen del fondo
     ImageResize(&fondo, screenWidth, screenHeight);      // Redimensiona la imagen del fondo al tamaño de la ventana
     fondoTexture = LoadTextureFromImage(fondo);          // Convierte la imagen a textura
     UnloadImage(fondo);                                  // Libera la imagen de memoria
+
+    Image shop = LoadImage("src/images/shop.jpg"); // Carga la imagen del fondo
+    ImageResize(&shop, screenWidth, screenHeight);      // Redimensiona la imagen del fondo al tamaño de la ventana
+    shop_texture = LoadTextureFromImage(shop);          // Convierte la imagen a textura
+    UnloadImage(shop);                                  // Libera la imagen de memoria
 
     SetTargetFPS(60); // Establece la tasa de fotogramas por segundo
 
@@ -122,7 +139,7 @@ int main()
             ClearBackground(RAYWHITE);
             fondoMenu(fondoTexture);
             menuTitulo("MATH BROS");
-
+            UpdateMusic(gameMusic, musicInitialized, currentMusicLevel, 0);
             // Mostrar monedas en el menú principal
             DrawText(TextFormat("Monedas: %d", coinsCollected), 10, 40, 20, YELLOW);
 
@@ -168,6 +185,7 @@ int main()
             ClearBackground(RAYWHITE); // Limpia el fondo de la pantalla con color blanco
             fondoMenu(fondoTexture);
             menuTitulo("Niveles");
+            UpdateMusic(gameMusic, musicInitialized, currentMusicLevel, 0);
             if (btnsNiveles("Nivel 1", 200, 250))
             {
                 nivelActual = 0;                                                     // Cambia el nivel actual a 1
@@ -202,8 +220,8 @@ int main()
         //**********************************************************************************
         case MENU_JUEGO:
         {
+            UpdateMusic(gameMusic, musicInitialized, currentMusicLevel, 1);
             static bool juegoPausado = false;
-
             if (juegoPausado)
             {
                 if (IsKeyPressed(KEY_ESCAPE))
@@ -233,7 +251,7 @@ int main()
             else
             {
                 GameStatus status = nivel1(&posicionJugador, fondosNiveles[nivelActual], &coinsCollected, colors[selectedColorIndex].fullTexture, colors[selectedColorIndex].frames);
-
+                UpdateMusic(gameMusic, musicInitialized, currentMusicLevel, 1);
                 if (IsKeyPressed(KEY_ESCAPE)) // Permitir pausa en cualquier momento
                 {
                     juegoPausado = true;
@@ -262,7 +280,7 @@ int main()
         case MENU_JUEGO2:
         {
             static bool juegoPausado = false;
-
+            UpdateMusic(gameMusic, musicInitialized, currentMusicLevel, 2);
             if (juegoPausado)
             {
                 if (IsKeyPressed(KEY_ESCAPE))
@@ -292,7 +310,7 @@ int main()
             else
             {
                 GameStatus status = nivel2(&posicionJugador, fondosNiveles[nivelActual], &coinsCollected, colors[selectedColorIndex].fullTexture, colors[selectedColorIndex].frames);
-
+                UpdateMusic(gameMusic, musicInitialized, currentMusicLevel, 2);
                 if (IsKeyPressed(KEY_ESCAPE)) // Permitir pausa en cualquier momento
                 {
                     juegoPausado = true;
@@ -320,8 +338,8 @@ int main()
         //**********************************************************************************
         case MENU_JUEGO3:
         {
+            UpdateMusic(gameMusic, musicInitialized, currentMusicLevel, 3);
             static bool juegoPausado = false;
-
             if (juegoPausado)
             {
                 if (IsKeyPressed(KEY_ESCAPE))
@@ -351,7 +369,7 @@ int main()
             else
             {
                 GameStatus status = nivel3(&posicionJugador, fondosNiveles[nivelActual], &coinsCollected, colors[selectedColorIndex].fullTexture, colors[selectedColorIndex].frames);
-
+                UpdateMusic(gameMusic, musicInitialized, currentMusicLevel, 3);
                 if (status == GAME_PAUSE)
                 {
                     juegoPausado = true;
@@ -375,10 +393,10 @@ int main()
             //**********************************************************************************
         case MENU_TIENDA:
         {
-            fondoMenu(fondoTexture);
+            fondoMenu(shop_texture);
             DrawText(TextFormat("Monedas: %d", coinsCollected), 10, 40, 20, YELLOW);
             menuTitulo("Tienda");
-
+            UpdateMusic(gameMusic, musicInitialized, currentMusicLevel, 0);
             // Mensaje de ayuda centrado
             const char *helpText = "Compra y equipa nuevos personajes!";
             int helpTextSize = 24;
@@ -476,7 +494,12 @@ int main()
             {
                 UnloadTexture(colors[i].imageTexture);
             }
-
+            if (musicInitialized)
+            {
+                StopMusicStream(gameMusic);
+                UnloadMusicStream(gameMusic);
+                CloseAudioDevice();
+            }
             CloseWindow();
             return 0;
         }
@@ -526,3 +549,36 @@ bool DrawBuyButton(const char *text, int price, bool unlocked, int posX, int pos
     }
     return false;
 }
+
+void UpdateMusic(Music &gameMusic, bool &musicInitialized, int &currentMusicLevel, int level)
+{
+    if (!musicInitialized) return;
+    
+    if (level != currentMusicLevel)
+    {
+        StopMusicStream(gameMusic);
+        UnloadMusicStream(gameMusic);
+        
+        switch(level)
+        {
+            case 0: // Main menu
+                gameMusic = LoadMusicStream("src/sound/main.mp3");
+                break;
+            case 1: // Level 1
+                gameMusic = LoadMusicStream("src/sound/level1.mp3");
+                break;
+            case 2: // Level 2
+                gameMusic = LoadMusicStream("src/sound/level2.mp3");
+                break;
+            case 3: // Level 3
+                gameMusic = LoadMusicStream("src/sound/level3.mp3");
+                break;
+            default:
+                gameMusic = LoadMusicStream("src/sound/main.mp3");
+        }
+        currentMusicLevel = level;
+        PlayMusicStream(gameMusic);
+    }
+    UpdateMusicStream(gameMusic);
+}
+

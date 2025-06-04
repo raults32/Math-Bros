@@ -16,11 +16,14 @@ void fondoMenu(Texture2D fondoTexture);
 void menuTitulo(const char textotitulo[])
 {
 
-    int fontSize = 100;
+    int fontSize = 120;
     int textWidth = MeasureText(textotitulo, fontSize);
     int textX = (1280 - textWidth) / 2;
     int textY = 50;
-
+    int shadowOffsetX = 4;
+    int shadowOffsetY = 4;
+    
+    DrawText(textotitulo, textX + shadowOffsetX, textY + shadowOffsetY, fontSize, BLACK);
     DrawText(textotitulo, textX, textY, fontSize, ORANGE);
 }
 
