@@ -53,6 +53,14 @@ int main()
     Texture2D shop_texture;
     InitWindow(screenWidth, screenHeight, "Math Bros"); // Inicializa la ventana con un tamaño de 1280x720 y el título "Math Bros"
 
+    // Las rutas de recursos son relativas al proyecto; fija la carpeta al lado del ejecutable.
+    if (!ChangeDirectory(GetApplicationDirectory()))
+    {
+        TraceLog(LOG_ERROR, "No se pudo abrir la carpeta del ejecutable: %s", GetApplicationDirectory());
+        CloseWindow();
+        return 1;
+    }
+
     // add music
     Music gameMusic;
     bool musicInitialized = false;

@@ -8,8 +8,8 @@
       "args": [],
       "stopAtEntry": false,
       "externalConsole": true,
-      "cwd": "c:/Users/ensbu/OneDrive/Documentos/JuegoFinal/Math-Bros/JuegoFinal",
-      "program": "c:/Users/ensbu/OneDrive/Documentos/JuegoFinal/Math-Bros/JuegoFinal/build/Debug/outDebug",
+      "cwd": "${workspaceFolder}",
+      "program": "${workspaceFolder}/main.exe",
       "MIMode": "gdb",
       "miDebuggerPath": "gdb",
       "setupCommands": [
