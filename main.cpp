@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string>
 #include "mainMenu.h"
 #include "menuNiveles.h"
 #include "menuPausa.h"
@@ -54,9 +55,17 @@ int main()
 
     InitWindow(screenWidth, screenHeight, "Math Bros");
 
-    if (!ChangeDirectory(GetApplicationDirectory()))
+    std::string applicationDirectory = GetApplicationDirectory();
+    while (applicationDirectory.size() > 3 &&
+           (applicationDirectory.back() == '\\' || applicationDirectory.back() == '/'))
     {
-        TraceLog(LOG_ERROR, "No se pudo abrir la carpeta del ejecutable: %s", GetApplicationDirectory());
+        applicationDirectory.pop_back();
+    }
+
+    const std::string currentDirectory = GetWorkingDirectory();
+    if (currentDirectory != applicationDirectory && !ChangeDirectory(applicationDirectory.c_str()))
+    {
+        TraceLog(LOG_ERROR, "No se pudo abrir la carpeta del ejecutable: %s", applicationDirectory.c_str());
         CloseWindow();
         return 1;
     }
@@ -78,7 +87,7 @@ int main()
     const char *rutasFondos[NUM_NIVELES] = {
         "src/images/nivel1.png",
         "src/images/nivel2.png",
-        "src/images/nivel3.jpg"};
+        "src/images/nivel3.png"};
 
     for (int i = 0; i < NUM_NIVELES; i++)
     {
@@ -116,12 +125,12 @@ int main()
 
     SetExitKey(0);
 
-    Image fondo = LoadImage("src/images/op1.jpg");
+    Image fondo = LoadImage("src/images/op1.png");
     ImageResize(&fondo, screenWidth, screenHeight);
     Texture2D fondoTexture = LoadTextureFromImage(fondo);
     UnloadImage(fondo);
 
-    Image shop = LoadImage("src/images/shop.jpg");
+    Image shop = LoadImage("src/images/shop.png");
     ImageResize(&shop, screenWidth, screenHeight);
     Texture2D shop_texture = LoadTextureFromImage(shop);
     UnloadImage(shop);
