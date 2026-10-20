@@ -1,32 +1,47 @@
+#ifndef MENU_NIVELES_H
+#define MENU_NIVELES_H
+
 #include <raylib.h>
 #include <string.h>
 #include <stdbool.h>
 
-//PROTOTIPOS
-bool btnsNiveles(const char textoBoton[], int rectX, int rectY);
+bool btnsNiveles(const char textoBoton[], int rectX, int rectY, bool desbloqueado, int highScore);
 
-bool btnsNiveles(const char textoBoton[], int rectX, int rectY)
+bool btnsNiveles(const char textoBoton[], int rectX, int rectY, bool desbloqueado, int highScore)
 {
-    int rectWidth = 200;                                                         // Ancho del rectángulo
-    int rectHeight = 120;                                                        // Alto del rectángulo                  // Calcula la posición X del rectángulo para centrarlo en la pantalla
-    Rectangle rect = {(float)rectX, (float)rectY, (float)rectWidth, (float)rectHeight}; // Crea un rectángulo con las dimensiones y posición especificadas
+    int rectWidth = 220;
+    int rectHeight = 140;
+    Rectangle rect = {(float)rectX, (float)rectY, (float)rectWidth, (float)rectHeight};
 
-    // Centrar el texto con el boton
-    int fontsize = 40;                                 // Tamaño de la fuente
-    int textWidth = MeasureText(textoBoton, fontsize); // Mide el ancho del texto
-    int textX = rect.x + (rect.width - textWidth) / 2; // Calcula la posición X del texto para centrarlo en el rectángulo
-    int textY = rect.y + (rect.height - fontsize) / 2; // Calcula la posición Y del texto para centrarlo en el rectángulo
+    Vector2 mousePoint = GetMousePosition();
+    bool mouseSobreBoton = CheckCollisionPointRec(mousePoint, rect) && desbloqueado;
 
-    // Chequea si el mouse está sobre el botón
-    Vector2 mousePoint = GetMousePosition(); // Obtiene la posición del mouse
-    bool mouseSobreBoton = CheckCollisionPointRec(mousePoint, rect);
+    Color colorFondo;
+    if (!desbloqueado)
+        colorFondo = Fade(DARKGRAY, 0.85f);
+    else if (mouseSobreBoton)
+        colorFondo = Fade(SKYBLUE, 0.95f);
+    else
+        colorFondo = Fade(BLUE, 0.80f);
 
-    Color colorFondo = mouseSobreBoton ? Fade(DARKBLUE, 0.8f) : Fade(BLUE, 0.7f);
-    DrawRectangle(rectX, rectY, rectWidth, rectHeight, colorFondo);
+    DrawRectangleRec(rect, colorFondo);
+    DrawRectangleLinesEx(rect, 5.0f, desbloqueado ? (mouseSobreBoton ? GOLD : DARKBLUE) : BLACK);
 
-    DrawRectangleLinesEx(rect, 6.0f, DARKBLUE);                               // Dibuja el borde del rectángulo con un grosor de 10 píxeles
-    DrawRectangle(rectX, rectY, rectWidth, rectHeight, Fade(SKYBLUE, 0.70f)); // Dibuja el rectángulo con un color de fondo
-    DrawText(textoBoton, textX, textY, fontsize, WHITE);                      // Dibuja el texto del botón en el centro del rectángulo
+    int fontsize = 36;
+    const char *label = desbloqueado ? textoBoton : "BLOQUEADO";
+    int labelSize = desbloqueado ? fontsize : 26;
+    int textWidth = MeasureText(label, labelSize);
+    int textX = (int)(rect.x + (rect.width - textWidth) / 2);
+    int textY = (int)(rect.y + 30);
 
-    return (mouseSobreBoton && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)); // Devuelve verdadero si el mouse está sobre el botón y se ha hecho clic
+    DrawText(label, textX + 2, textY + 2, labelSize, BLACK);
+    DrawText(label, textX, textY, labelSize, desbloqueado ? WHITE : LIGHTGRAY);
+
+    const char *scoreText = desbloqueado ? TextFormat("Record: %d pts", highScore) : "Supera el anterior";
+    int scoreWidth = MeasureText(scoreText, 18);
+    DrawText(scoreText, (int)(rect.x + (rect.width - scoreWidth) / 2), (int)(rect.y + 90), 18, desbloqueado ? YELLOW : GRAY);
+
+    return (mouseSobreBoton && IsMouseButtonPressed(MOUSE_LEFT_BUTTON));
 }
+
+#endif

@@ -1,60 +1,55 @@
+#ifndef MAIN_MENU_H
+#define MAIN_MENU_H
+
 #include <raylib.h>
 #include <string.h>
 #include <stdbool.h>
-//**********************************************************************************
-//** Prototipos **//
-//**********************************************************************************
+
 void menuTitulo(const char textotitulo[]);
 bool btnsMenu(const char textoBoton[], int rectY);
 void fondoMenu(Texture2D fondoTexture);
 
-//**********************************************************************************
-//** Funciones **//
-//**********************************************************************************
-
-//*** TITULO DEL MENU ***//
 void menuTitulo(const char textotitulo[])
 {
-
-    int fontSize = 120;
+    int fontSize = 110;
     int textWidth = MeasureText(textotitulo, fontSize);
     int textX = (1280 - textWidth) / 2;
-    int textY = 50;
-    int shadowOffsetX = 4;
-    int shadowOffsetY = 4;
-    
-    DrawText(textotitulo, textX + shadowOffsetX, textY + shadowOffsetY, fontSize, BLACK);
+    int textY = 45;
+
+    DrawText(textotitulo, textX + 5, textY + 5, fontSize, BLACK);
     DrawText(textotitulo, textX, textY, fontSize, ORANGE);
 }
 
-//*** FONDO DEL MENU ***//
 void fondoMenu(Texture2D fondoTexture)
 {
-    DrawTexture(fondoTexture, 0, 0, WHITE); // Dibuja la textura de fondo en la posición (0, 0)
+    DrawTexture(fondoTexture, 0, 0, WHITE);
 }
 
-//*** BOTONES DEL MENU ***//
 bool btnsMenu(const char textoBoton[], int rectY)
 {
-    int rectWidth = 250;                                                                // Ancho del rectángulo
-    int rectHeight = 100;                                                               // Alto del rectángulo
-    float rectX = (1280 - rectWidth) / 2;                                               // Calcula la posición X del rectángulo para centrarlo en la pantalla
-    Rectangle rect = {(float)rectX, (float)rectY, (float)rectWidth, (float)rectHeight}; // Crea un rectángulo con las dimensiones y posición especificadas
+    int rectWidth = 260;
+    int rectHeight = 85;
+    float rectX = (1280 - rectWidth) / 2.0f;
+    Rectangle rect = {rectX, (float)rectY, (float)rectWidth, (float)rectHeight};
 
-    int fontsize = 40;                                 // Tamaño de la fuente
-    int textWidth = MeasureText(textoBoton, fontsize); // Mide el ancho del texto
-    int textX = rect.x + (rect.width - textWidth) / 2; // Calcula la posición X del texto para centrarlo en el rectángulo
-    int textY = rect.y + (rect.height - fontsize) / 2; // Calcula la posición Y del texto para centrarlo en el rectángulo
-
-    Vector2 mousePoint = GetMousePosition(); // Obtiene la posición del mouse
+    Vector2 mousePoint = GetMousePosition();
     bool mouseSobreBoton = CheckCollisionPointRec(mousePoint, rect);
 
-    Color colorFondo = mouseSobreBoton ? Fade(DARKGRAY, 0.8f) : Fade(GRAY, 0.7f);
-    DrawRectangle(rectX, rectY, rectWidth, rectHeight, colorFondo);
+    Color colorFondo = mouseSobreBoton ? Fade(ORANGE, 0.90f) : Fade(DARKGRAY, 0.80f);
+    Color colorBorde = mouseSobreBoton ? GOLD : BLACK;
 
-    DrawRectangleLinesEx(rect, 6.0f, BLACK); // Dibuja el borde del rectángulo con un grosor de 10 píxeles
-    DrawRectangle(rectX, rectY, rectWidth, rectHeight, Fade(GRAY, 0.70f));
-    DrawText(textoBoton, textX, textY, fontsize, WHITE); // Dibuja el texto del botón en el centro del rectángulo
+    DrawRectangleRec(rect, colorFondo);
+    DrawRectangleLinesEx(rect, 5.0f, colorBorde);
 
-    return (mouseSobreBoton && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)); // Devuelve verdadero si el mouse está sobre el botón y se ha hecho clic
+    int fontsize = 36;
+    int textWidth = MeasureText(textoBoton, fontsize);
+    int textX = (int)(rect.x + (rect.width - textWidth) / 2);
+    int textY = (int)(rect.y + (rect.height - fontsize) / 2);
+
+    DrawText(textoBoton, textX + 2, textY + 2, fontsize, BLACK);
+    DrawText(textoBoton, textX, textY, fontsize, WHITE);
+
+    return (mouseSobreBoton && IsMouseButtonPressed(MOUSE_LEFT_BUTTON));
 }
+
+#endif

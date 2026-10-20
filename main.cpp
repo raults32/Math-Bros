@@ -6,7 +6,8 @@
 
 #define NUM_NIVELES 3
 #define NUM_COLORS 5
-// Cambio de pantalla
+#define SAVE_FILE "savegame.dat"
+
 enum Pantalla
 {
     MENU_PRINCIPAL,
@@ -19,41 +20,40 @@ enum Pantalla
 };
 Pantalla pantallaActual = MENU_PRINCIPAL;
 
-// Estructura para manejar los colores desbloqueados
 typedef struct
 {
     const char *name;
     int price;
     bool unlocked;
     const char *imagePath;
-    Texture2D imageTexture;   // Miniatura para la tienda
-    Texture2D fullTexture;    // Textura original para animación en el juego
-    int frames;               // Número de frames de animación
-    const char *previewPath;  // Ruta de la imagen ilustrativa
-    Texture2D previewTexture; // Imagen ilustrativa para la tienda
+    Texture2D fullTexture;
+    int frames;
+    const char *previewPath;
+    Texture2D previewTexture;
 } ColorOption;
 
-// Función para dibujar botones de compra
+typedef struct
+{
+    int coins;
+    int selectedSkin;
+    bool unlockedSkins[NUM_COLORS];
+    bool unlockedLevels[NUM_NIVELES];
+    int highScores[NUM_NIVELES];
+} SaveData;
 
 bool DrawBuyButton(const char *text, int price, bool unlocked, int posX, int posY, int *coins);
 void UpdateMusic(Music &gameMusic, bool &musicInitialized, int &currentMusicLevel, int level);
+void GuardarProgreso(int coins, int selectedSkin, ColorOption colors[], bool nivelesDesbloqueados[], int highScores[]);
+void CargarProgreso(int *coins, int *selectedSkin, ColorOption colors[], bool nivelesDesbloqueados[], int highScores[]);
 
 int main()
 {
-    //**********************************************************************************
-    //** Inicialización de la ventana y variables **//
-    //**********************************************************************************
-    const int screenWidth = 1280; // Ancho de la ventana X
-    const int screenHeight = 720; // Alto de la ventana Y
+    const int screenWidth = 1280;
+    const int screenHeight = 720;
+    Vector2 posInicialJugador = {50.0f, 550.0f};
 
-    int posinicialX = 50;
-    int posinicialY = 550;
+    InitWindow(screenWidth, screenHeight, "Math Bros");
 
-    Texture2D fondoTexture;
-    Texture2D shop_texture;
-    InitWindow(screenWidth, screenHeight, "Math Bros"); // Inicializa la ventana con un tamaño de 1280x720 y el título "Math Bros"
-
-    // Las rutas de recursos son relativas al proyecto; fija la carpeta al lado del ejecutable.
     if (!ChangeDirectory(GetApplicationDirectory()))
     {
         TraceLog(LOG_ERROR, "No se pudo abrir la carpeta del ejecutable: %s", GetApplicationDirectory());
@@ -61,7 +61,6 @@ int main()
         return 1;
     }
 
-    // add music
     Music gameMusic;
     bool musicInitialized = false;
     int currentMusicLevel = 0;
@@ -71,13 +70,12 @@ int main()
     SetMusicVolume(gameMusic, 0.1f);
     PlayMusicStream(gameMusic);
 
-    // icono
-    Image icon = LoadImage("src/images/icon.png"); // Carga la imagen del icono
-    SetWindowIcon(icon);                           // Establece el icono de la ventana
-    UnloadImage(icon);                             // Libera la imagen del icono de la memoria
+    Image icon = LoadImage("src/images/icon.png");
+    SetWindowIcon(icon);
+    UnloadImage(icon);
 
     Texture2D fondosNiveles[NUM_NIVELES];
-    char rutasFondos[NUM_NIVELES][50] = {
+    const char *rutasFondos[NUM_NIVELES] = {
         "src/images/nivel1.png",
         "src/images/nivel2.png",
         "src/images/nivel3.jpg"};
@@ -89,370 +87,240 @@ int main()
         fondosNiveles[i] = LoadTextureFromImage(img);
         UnloadImage(img);
     }
-    int nivelActual = 0;    // 0 = Nivel 1, 1 = Nivel 2, etc.
-    int coinsCollected = 0; // Contador de monedas recolectadas
 
-    // Colores disponibles para comprar, con rutas de imágenes de referencia
+    int coinsCollected = 0;
+    int selectedColorIndex = 0;
+    bool nivelesDesbloqueados[NUM_NIVELES] = {true, false, false};
+    int highScores[NUM_NIVELES] = {0, 0, 0};
+
     ColorOption colors[NUM_COLORS] = {
-        {"Default", 0, true, "src/images/zorrodefault.png", {0}, {0}, 4, "src/images/default.png", {0}},
-        {"Rojo", 3, false, "src/images/zorrorojo.png", {0}, {0}, 4, "src/images/red.png", {0}},
-        {"Azul", 8, false, "src/images/zorroazul.png", {0}, {0}, 4, "src/images/azul.png", {0}},
-        {"Verde", 10, false, "src/images/zorroverde.png", {0}, {0}, 4, "src/images/verde.png", {0}},
-        {"Morado", 15, false, "src/images/zorromorado.png", {0}, {0}, 4, "src/images/morado.png", {0}}};
+        {"Default", 0, true, "src/images/zorrodefault.png", {0}, 4, "src/images/default.png", {0}},
+        {"Rojo", 3, false, "src/images/zorrorojo.png", {0}, 4, "src/images/red.png", {0}},
+        {"Azul", 8, false, "src/images/zorroazul.png", {0}, 4, "src/images/azul.png", {0}},
+        {"Verde", 10, false, "src/images/zorroverde.png", {0}, 4, "src/images/verde.png", {0}},
+        {"Morado", 15, false, "src/images/zorromorado.png", {0}, 4, "src/images/morado.png", {0}}};
 
-    int selectedColorIndex = 0; // Índice del color actualmente seleccionado
+    CargarProgreso(&coinsCollected, &selectedColorIndex, colors, nivelesDesbloqueados, highScores);
 
-    // Cargar las imágenes de referencia de los personajes
     for (int i = 0; i < NUM_COLORS; i++)
     {
-        // Textura original para el juego
         Image imgFull = LoadImage(colors[i].imagePath);
         colors[i].fullTexture = LoadTextureFromImage(imgFull);
         UnloadImage(imgFull);
 
-        // Imagen ilustrativa para la tienda
         Image imgPreview = LoadImage(colors[i].previewPath);
         ImageResize(&imgPreview, 150, 150);
         colors[i].previewTexture = LoadTextureFromImage(imgPreview);
         UnloadImage(imgPreview);
     }
 
-    SetExitKey(0); // Desactiva la tecla de salida (ESC) para evitar cerrar la ventana
+    SetExitKey(0);
 
-    Image fondo = LoadImage("src/images/op1.jpg");  // Carga la imagen del fondo
-    ImageResize(&fondo, screenWidth, screenHeight); // Redimensiona la imagen del fondo al tamaño de la ventana
-    fondoTexture = LoadTextureFromImage(fondo);     // Convierte la imagen a textura
-    UnloadImage(fondo);                             // Libera la imagen de memoria
+    Image fondo = LoadImage("src/images/op1.jpg");
+    ImageResize(&fondo, screenWidth, screenHeight);
+    Texture2D fondoTexture = LoadTextureFromImage(fondo);
+    UnloadImage(fondo);
 
-    Image shop = LoadImage("src/images/shop.jpg"); // Carga la imagen del fondo
-    ImageResize(&shop, screenWidth, screenHeight); // Redimensiona la imagen del fondo al tamaño de la ventana
-    shop_texture = LoadTextureFromImage(shop);     // Convierte la imagen a textura
-    UnloadImage(shop);                             // Libera la imagen de memoria
+    Image shop = LoadImage("src/images/shop.jpg");
+    ImageResize(&shop, screenWidth, screenHeight);
+    Texture2D shop_texture = LoadTextureFromImage(shop);
+    UnloadImage(shop);
 
-    SetTargetFPS(60); // Establece la tasa de fotogramas por segundo
+    SetTargetFPS(60);
 
-    Vector2 posicionJugador = {400, 280}; // Posición inicial del jugador
-
-    while (!WindowShouldClose())
+    while (!WindowShouldClose() && pantallaActual != SALIR)
     {
-        BeginDrawing();
-
         switch (pantallaActual)
         {
-        //**********************************************************************************
-        //** Menu Principal **//
-        //**********************************************************************************
         case MENU_PRINCIPAL:
         {
+            UpdateMusic(gameMusic, musicInitialized, currentMusicLevel, 0);
+            BeginDrawing();
             ClearBackground(RAYWHITE);
             fondoMenu(fondoTexture);
             menuTitulo("MATH BROS");
-            UpdateMusic(gameMusic, musicInitialized, currentMusicLevel, 0);
-            // Mostrar monedas en el menú principal
-            DrawText(TextFormat("Monedas: %d", coinsCollected), 10, 40, 20, YELLOW);
 
-            // Mostrar personaje equipado actual en una esquina
-            // Fondo y marco
+            DrawRectangle(10, 15, 220, 45, Fade(BLACK, 0.6f));
+            DrawRectangleLines(10, 15, 220, 45, GOLD);
+            DrawText(TextFormat("Monedas: %d", coinsCollected), 25, 27, 24, YELLOW);
+
             int imgWidth = colors[selectedColorIndex].previewTexture.width;
             int imgHeight = colors[selectedColorIndex].previewTexture.height;
-            float scale = 1.2f;                            // Escala para hacer la imagen más grande
-            int frameWidth = (int)(imgWidth * scale) + 20; // Margen de 10 píxeles a cada lado
+            float scale = 1.2f;
+            int frameWidth = (int)(imgWidth * scale) + 20;
             int frameHeight = (int)(imgHeight * scale) + 20;
-            int frameX = 1280 - frameWidth - 20; // 20 píxeles desde el borde derecho
-            int frameY = 720 - frameHeight - 60; // 60 píxeles desde el borde inferior
+            int frameX = 1280 - frameWidth - 20;
+            int frameY = 720 - frameHeight - 60;
 
-            // Texto "Personaje actual"
             const char *text = "Personaje actual";
             int textSize = 24;
             int textWidth = MeasureText(text, textSize);
             int textX = frameX + (frameWidth - textWidth) / 2;
             int textY = frameY - 30;
-            DrawText(text, textX + 2, textY + 2, textSize, BLACK); // Sombra
-            DrawText(text, textX, textY, textSize, YELLOW);        // Texto principal
+            DrawText(text, textX + 2, textY + 2, textSize, BLACK);
+            DrawText(text, textX, textY, textSize, YELLOW);
 
-            // Imagen del personaje
             int imgX = frameX + (frameWidth - (int)(imgWidth * scale)) / 2;
             int imgY = frameY + (frameHeight - (int)(imgHeight * scale)) / 2;
-            DrawTextureEx(colors[selectedColorIndex].previewTexture,
-                          (Vector2){(float)imgX, (float)imgY}, 0.0f, scale, WHITE);
+            DrawTextureEx(colors[selectedColorIndex].previewTexture, (Vector2){(float)imgX, (float)imgY}, 0.0f, scale, WHITE);
 
             if (btnsMenu("Jugar", 250))
                 pantallaActual = MENU_NIVELES;
-            if (btnsMenu("Tienda", 370))
+            if (btnsMenu("Tienda", 365))
                 pantallaActual = MENU_TIENDA;
-            if (btnsMenu("Salir", 490))
+            if (btnsMenu("Salir", 480))
+                pantallaActual = SALIR;
+
+            EndDrawing();
+            break;
+        }
+
+        case MENU_NIVELES:
+        {
+            UpdateMusic(gameMusic, musicInitialized, currentMusicLevel, 0);
+            BeginDrawing();
+            ClearBackground(RAYWHITE);
+            fondoMenu(fondoTexture);
+            menuTitulo("Niveles");
+
+            if (btnsNiveles("Nivel 1", 200, 240, nivelesDesbloqueados[0], highScores[0]))
+                pantallaActual = MENU_JUEGO;
+
+            if (btnsNiveles("Nivel 2", 530, 240, nivelesDesbloqueados[1], highScores[1]))
+                pantallaActual = MENU_JUEGO2;
+
+            if (btnsNiveles("Nivel 3", 860, 240, nivelesDesbloqueados[2], highScores[2]))
+                pantallaActual = MENU_JUEGO3;
+
+            DrawText("Presiona [SUPR / DEL] para reiniciar el progreso guardado", 380, 420, 18, LIGHTGRAY);
+            if (IsKeyPressed(KEY_DELETE))
+            {
+                coinsCollected = 0;
+                selectedColorIndex = 0;
+                for (int i = 1; i < NUM_COLORS; i++) colors[i].unlocked = false;
+                for (int i = 0; i < NUM_NIVELES; i++) { nivelesDesbloqueados[i] = (i == 0); highScores[i] = 0; }
+                GuardarProgreso(coinsCollected, selectedColorIndex, colors, nivelesDesbloqueados, highScores);
+            }
+
+            if (btnsMenu("Volver", 530))
+                pantallaActual = MENU_PRINCIPAL;
+
+            EndDrawing();
+            break;
+        }
+
+        case MENU_JUEGO:
+        {
+            UpdateMusic(gameMusic, musicInitialized, currentMusicLevel, 1);
+            GameStatus status = nivel1(posInicialJugador, fondosNiveles[0], &coinsCollected, &highScores[0],
+                                       colors[selectedColorIndex].fullTexture, colors[selectedColorIndex].frames, &gameMusic);
+            if (status == GAME_WON)
+            {
+                nivelesDesbloqueados[1] = true;
+                GuardarProgreso(coinsCollected, selectedColorIndex, colors, nivelesDesbloqueados, highScores);
+                pantallaActual = MENU_NIVELES;
+            }
+            else if (status == GAME_OVER)
+                pantallaActual = MENU_NIVELES;
+            else if (status == GAME_EXIT_MAIN_MENU)
+                pantallaActual = MENU_PRINCIPAL;
+            else if (status == GAME_EXIT_APP)
                 pantallaActual = SALIR;
             break;
         }
 
-        //**********************************************************************************
-        //** Menu de Niveles **//
-        //**********************************************************************************
-        case MENU_NIVELES:
-        {
-            ClearBackground(RAYWHITE); // Limpia el fondo de la pantalla con color blanco
-            fondoMenu(fondoTexture);
-            menuTitulo("Niveles");
-            UpdateMusic(gameMusic, musicInitialized, currentMusicLevel, 0);
-            if (btnsNiveles("Nivel 1", 200, 250))
-            {
-                nivelActual = 0;                                                     // Cambia el nivel actual a 1
-                posicionJugador = (Vector2){(float)posinicialX, (float)posinicialY}; // Reinicia la posición del jugador
-                pantallaActual = MENU_JUEGO;
-                menuPausa();
-            }
-
-            if (btnsNiveles("Nivel 2", 540, 250))
-            {
-                nivelActual = 1;                                                     // Cambia el nivel actual a 2
-                posicionJugador = (Vector2){(float)posinicialX, (float)posinicialY}; // Reinicia la posición del jugador
-                pantallaActual = MENU_JUEGO2;
-                menuPausa();
-            }
-
-            if (btnsNiveles("Nivel 3", 840, 250))
-            {
-                nivelActual = 2;                                                     // Cambia el nivel actual a 3
-                posicionJugador = (Vector2){(float)posinicialX, (float)posinicialY}; // Reinicia la posición del jugador
-                pantallaActual = MENU_JUEGO3;
-                menuPausa();
-            }
-
-            if (btnsMenu("Volver", 550))
-                pantallaActual = MENU_PRINCIPAL;
-            break;
-        }
-
-        //**********************************************************************************
-        //** Nivel 1 **//
-        //**********************************************************************************
-        case MENU_JUEGO:
-        {
-            static bool juegoPausado = false;
-
-            if (juegoPausado)
-            {
-
-                if (IsKeyPressed(KEY_ESCAPE))
-                {
-                    juegoPausado = false;
-                }
-                else
-                {
-                    PausaOpcion opcion = menuPausa();
-                    switch (opcion)
-                    {
-                    case PAUSA_CONTINUAR:
-                        juegoPausado = false;
-                        break;
-                    case PAUSA_MENU_PRINCIPAL:
-                        pantallaActual = MENU_PRINCIPAL;
-                        juegoPausado = false;
-                        break;
-                    case PAUSA_SALIR:
-                        pantallaActual = SALIR;
-                        break;
-                    default:
-                        break;
-                    }
-                }
-            }
-            else
-            {
-                UpdateMusic(gameMusic, musicInitialized, currentMusicLevel, 1);
-                GameStatus status = nivel1(&posicionJugador, fondosNiveles[nivelActual], &coinsCollected, colors[selectedColorIndex].fullTexture, colors[selectedColorIndex].frames, &gameMusic, &musicInitialized, &currentMusicLevel);
-                if (IsKeyPressed(KEY_ESCAPE)) // Permitir pausa en cualquier momento
-                {
-                    juegoPausado = true;
-                }
-                else if (status == GAME_PAUSE) // Pausa desde el nivel (si está implementada)
-                {
-                    juegoPausado = true;
-                }
-                else if (status == GAME_OVER)
-                {
-                    pantallaActual = MENU_NIVELES; // Volver al menú de niveles tras perder
-                    juegoPausado = false;
-                }
-                else if (status == GAME_WON)
-                {
-                    pantallaActual = MENU_NIVELES; // Volver al menú de niveles tras ganar
-                    juegoPausado = false;
-                }
-            }
-            break;
-        }
-
-        //**********************************************************************************
-        //** Nivel 2 **//
-        //**********************************************************************************
         case MENU_JUEGO2:
         {
-            static bool juegoPausado = false;
-            if (juegoPausado)
+            UpdateMusic(gameMusic, musicInitialized, currentMusicLevel, 2);
+            GameStatus status = nivel2(posInicialJugador, fondosNiveles[1], &coinsCollected, &highScores[1],
+                                       colors[selectedColorIndex].fullTexture, colors[selectedColorIndex].frames, &gameMusic);
+            if (status == GAME_WON)
             {
-                if (IsKeyPressed(KEY_ESCAPE))
-                {
-                    juegoPausado = false;
-                }
-                else
-                {
-                    PausaOpcion opcion = menuPausa();
-                    switch (opcion)
-                    {
-                    case PAUSA_CONTINUAR:
-                        juegoPausado = false;
-                        break;
-                    case PAUSA_MENU_PRINCIPAL:
-                        pantallaActual = MENU_PRINCIPAL;
-                        juegoPausado = false;
-                        break;
-                    case PAUSA_SALIR:
-                        pantallaActual = SALIR;
-                        break;
-                    default:
-                        break;
-                    }
-                }
+                nivelesDesbloqueados[2] = true;
+                GuardarProgreso(coinsCollected, selectedColorIndex, colors, nivelesDesbloqueados, highScores);
+                pantallaActual = MENU_NIVELES;
             }
-            else
-            {
-                UpdateMusic(gameMusic, musicInitialized, currentMusicLevel, 2);
-                GameStatus status = nivel2(&posicionJugador, fondosNiveles[nivelActual], &coinsCollected, colors[selectedColorIndex].fullTexture, colors[selectedColorIndex].frames, &gameMusic, &musicInitialized, &currentMusicLevel);
-                if (IsKeyPressed(KEY_ESCAPE)) // Permitir pausa en cualquier momento
-                {
-                    juegoPausado = true;
-                }
-                else if (status == GAME_PAUSE) // Pausa desde el nivel (si está implementada)
-                {
-                    juegoPausado = true;
-                }
-                else if (status == GAME_OVER)
-                {
-                    pantallaActual = MENU_NIVELES; // Volver al menú de niveles tras perder
-                    juegoPausado = false;
-                }
-                else if (status == GAME_WON)
-                {
-                    pantallaActual = MENU_NIVELES; // Volver al menú de niveles tras ganar
-                    juegoPausado = false;
-                }
-            }
+            else if (status == GAME_OVER)
+                pantallaActual = MENU_NIVELES;
+            else if (status == GAME_EXIT_MAIN_MENU)
+                pantallaActual = MENU_PRINCIPAL;
+            else if (status == GAME_EXIT_APP)
+                pantallaActual = SALIR;
             break;
         }
 
-        //**********************************************************************************
-        //** Nivel 3 **//
-        //**********************************************************************************
         case MENU_JUEGO3:
         {
-            static bool juegoPausado = false;
-            if (juegoPausado)
+            UpdateMusic(gameMusic, musicInitialized, currentMusicLevel, 3);
+            GameStatus status = nivel3(posInicialJugador, fondosNiveles[2], &coinsCollected, &highScores[2],
+                                       colors[selectedColorIndex].fullTexture, colors[selectedColorIndex].frames, &gameMusic);
+            if (status == GAME_WON)
             {
-                if (IsKeyPressed(KEY_ESCAPE))
-                {
-                    juegoPausado = false;
-                }
-                else
-                {
-                    PausaOpcion opcion = menuPausa();
-                    switch (opcion)
-                    {
-                    case PAUSA_CONTINUAR:
-                        juegoPausado = false;
-                        break;
-                    case PAUSA_MENU_PRINCIPAL:
-                        pantallaActual = MENU_PRINCIPAL;
-                        juegoPausado = false;
-                        break;
-                    case PAUSA_SALIR:
-                        pantallaActual = SALIR;
-                        break;
-                    default:
-                        break;
-                    }
-                }
+                GuardarProgreso(coinsCollected, selectedColorIndex, colors, nivelesDesbloqueados, highScores);
+                pantallaActual = MENU_NIVELES;
             }
-            else
-            {
-                UpdateMusic(gameMusic, musicInitialized, currentMusicLevel, 3);
-                GameStatus status = nivel3(&posicionJugador, fondosNiveles[nivelActual], &coinsCollected, colors[selectedColorIndex].fullTexture, colors[selectedColorIndex].frames, &gameMusic, &musicInitialized, &currentMusicLevel);
-                if (status == GAME_PAUSE)
-                {
-                    juegoPausado = true;
-                }
-                else if (status == GAME_OVER)
-                {
-                    pantallaActual = MENU_NIVELES; // Volver al menú de niveles tras perder
-                    juegoPausado = false;
-                }
-                else if (status == GAME_WON)
-                {
-                    pantallaActual = MENU_NIVELES; // Volver al menú de niveles tras ganar
-                    juegoPausado = false;
-                }
-            }
+            else if (status == GAME_OVER)
+                pantallaActual = MENU_NIVELES;
+            else if (status == GAME_EXIT_MAIN_MENU)
+                pantallaActual = MENU_PRINCIPAL;
+            else if (status == GAME_EXIT_APP)
+                pantallaActual = SALIR;
             break;
         }
 
-            //**********************************************************************************
-            //** Menu de Tienda **//
-            //**********************************************************************************
         case MENU_TIENDA:
         {
-            fondoMenu(shop_texture);
-            DrawText(TextFormat("Monedas: %d", coinsCollected), 10, 40, 20, YELLOW);
-            menuTitulo("Tienda");
             UpdateMusic(gameMusic, musicInitialized, currentMusicLevel, 0);
-            // Mensaje de ayuda centrado
-            const char *helpText = "Compra y equipa nuevos personajes!";
+            BeginDrawing();
+            ClearBackground(RAYWHITE);
+            fondoMenu(shop_texture);
+
+            DrawRectangle(10, 15, 220, 45, Fade(BLACK, 0.6f));
+            DrawRectangleLines(10, 15, 220, 45, GOLD);
+            DrawText(TextFormat("Monedas: %d", coinsCollected), 25, 27, 24, YELLOW);
+
+            menuTitulo("Tienda");
+
+            const char *helpText = "¡Compra y equipa nuevos personajes! (Guardado automatico)";
             int helpTextSize = 24;
             int helpTextWidth = MeasureText(helpText, helpTextSize);
             int helpTextX = (1280 - helpTextWidth) / 2;
-            int helpTextY = 150;
-            DrawText(helpText, helpTextX + 2, helpTextY + 2, helpTextSize, BLACK); // Sombra
-            DrawText(helpText, helpTextX, helpTextY, helpTextSize, WHITE);         // Texto principal
+            int helpTextY = 160;
+            DrawText(helpText, helpTextX + 2, helpTextY + 2, helpTextSize, BLACK);
+            DrawText(helpText, helpTextX, helpTextY, helpTextSize, WHITE);
 
-            int btnWidth = 180; // Reducido para mejor ajuste
+            int btnWidth = 180;
             int btnHeight = 45;
-            int imageSize = 130; // Reducido ligeramente
-            int spacing = 60;    // Espaciado optimizado
+            int imageSize = 130;
+            int spacing = 60;
 
             int totalWidth = NUM_COLORS * btnWidth + (NUM_COLORS - 1) * spacing;
             int startX = (1280 - totalWidth) / 2;
-            int btnY = 400; // Subido un poco
+            int btnY = 400;
 
             for (int i = 0; i < NUM_COLORS; i++)
             {
                 int btnX = startX + i * (btnWidth + spacing);
-
-                // Marco decorativo alrededor de la imagen
                 int imageX = btnX + (btnWidth - imageSize) / 2;
                 int imageY = btnY - imageSize - 30;
 
-                // Marco dorado si está equipado
                 if (i == selectedColorIndex)
                 {
-                    DrawRectangleLinesEx((Rectangle){(float)imageX - 5, (float)imageY - 5, (float)imageSize + 10, (float)imageSize + 10},
-                                         3.0f, GOLD);
+                    DrawRectangleLinesEx((Rectangle){(float)imageX - 5, (float)imageY - 5, (float)imageSize + 10, (float)imageSize + 10}, 3.0f, GOLD);
                 }
 
                 DrawTextureEx(colors[i].previewTexture, (Vector2){(float)imageX, (float)imageY},
                               0.0f, (float)imageSize / colors[i].previewTexture.width, WHITE);
 
-                // Nombre del personaje arriba de la imagen
-                int nameWidth = MeasureText(colors[i].name, 16);
-                DrawText(colors[i].name, btnX + (btnWidth - nameWidth) / 2,
-                         imageY - 25, 16, WHITE);
+                int nameWidth = MeasureText(colors[i].name, 18);
+                DrawText(colors[i].name, btnX + (btnWidth - nameWidth) / 2, imageY - 25, 18, WHITE);
 
-                // Botón de compra mejorado
-                if (DrawBuyButton(colors[i].name, colors[i].price, colors[i].unlocked,
-                                  btnX, btnY, &coinsCollected))
+                if (DrawBuyButton(colors[i].name, colors[i].price, colors[i].unlocked, btnX, btnY, &coinsCollected))
                 {
                     colors[i].unlocked = true;
+                    GuardarProgreso(coinsCollected, selectedColorIndex, colors, nivelesDesbloqueados, highScores);
                 }
 
-                // Botón de equipar mejorado
                 if (colors[i].unlocked)
                 {
                     int equipY = btnY + btnHeight + 15;
@@ -461,94 +329,79 @@ int main()
 
                     Color equipColor;
                     if (i == selectedColorIndex)
-                        equipColor = Fade(GOLD, 0.8f); // Dorado para equipado
+                        equipColor = Fade(GOLD, 0.85f);
                     else if (equipMouseOver)
-                        equipColor = Fade(GREEN, 0.8f);
+                        equipColor = Fade(GREEN, 0.85f);
                     else
-                        equipColor = Fade(DARKGREEN, 0.7f);
+                        equipColor = Fade(DARKGREEN, 0.75f);
 
                     DrawRectangleRec(equipBtn, equipColor);
-                    DrawRectangleLinesEx(equipBtn, 2.0f,
-                                         (i == selectedColorIndex) ? GOLD : DARKGREEN);
+                    DrawRectangleLinesEx(equipBtn, 2.0f, (i == selectedColorIndex) ? GOLD : DARKGREEN);
 
                     const char *equipText = (i == selectedColorIndex) ? "EQUIPADO" : "EQUIPAR";
-                    int equipTextWidth = MeasureText(equipText, 14);
-                    DrawText(equipText, btnX + (btnWidth - equipTextWidth) / 2,
-                             equipY + (btnHeight - 14) / 2, 14, WHITE);
+                    int equipTextWidth = MeasureText(equipText, 16);
+                    DrawText(equipText, btnX + (btnWidth - equipTextWidth) / 2, equipY + (btnHeight - 16) / 2, 16, WHITE);
 
                     if (equipMouseOver && IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
                     {
                         selectedColorIndex = i;
+                        GuardarProgreso(coinsCollected, selectedColorIndex, colors, nivelesDesbloqueados, highScores);
                     }
                 }
             }
 
             if (btnsMenu("Volver", 580))
                 pantallaActual = MENU_PRINCIPAL;
+
+            EndDrawing();
             break;
         }
 
-        case SALIR:
-        {
-            UnloadTexture(fondoTexture); // Libera la textura del fondo
-            for (int i = 0; i < NUM_NIVELES; i++)
-            {
-                UnloadTexture(fondosNiveles[i]);
-            } // Libera las texturas de los niveles
-
-            // Liberar las imágenes de los colores
-            for (int i = 0; i < NUM_COLORS; i++)
-            {
-                UnloadTexture(colors[i].imageTexture);
-            }
-            if (musicInitialized)
-            {
-                StopMusicStream(gameMusic);
-                UnloadMusicStream(gameMusic);
-                CloseAudioDevice();
-            }
-            CloseWindow();
-            return 0;
+        default:
+            break;
         }
-        }
-
-        EndDrawing();
     }
-    // Libera los recursos utilizados
-    UnloadTexture(fondoTexture); // Libera la textura del fondo
+
+    GuardarProgreso(coinsCollected, selectedColorIndex, colors, nivelesDesbloqueados, highScores);
+
+    UnloadTexture(fondoTexture);
+    UnloadTexture(shop_texture);
     for (int i = 0; i < NUM_NIVELES; i++)
     {
         UnloadTexture(fondosNiveles[i]);
-    } // Libera las texturas de los niveles
-
-    // Liberar las imágenes de los colores
+    }
     for (int i = 0; i < NUM_COLORS; i++)
     {
-        UnloadTexture(colors[i].imageTexture);
+        UnloadTexture(colors[i].fullTexture);
+        UnloadTexture(colors[i].previewTexture);
     }
 
-    CloseWindow(); // Cierra la ventana
+    if (musicInitialized)
+    {
+        StopMusicStream(gameMusic);
+        UnloadMusicStream(gameMusic);
+        CloseAudioDevice();
+    }
 
+    CloseWindow();
     return 0;
 }
 
 bool DrawBuyButton(const char *text, int price, bool unlocked, int posX, int posY, int *coins)
 {
-    int btnWidth = 200; // CAMBIADO: ahora coincide con el ancho del menú
-    int btnHeight = 50;
-    int btnX = posX;
-    Rectangle btn = {(float)btnX, (float)posY, (float)btnWidth, (float)btnHeight};
+    int btnWidth = 180;
+    int btnHeight = 45;
+    Rectangle btn = {(float)posX, (float)posY, (float)btnWidth, (float)btnHeight};
     bool mouseOver = CheckCollisionPointRec(GetMousePosition(), btn);
-    Color btnColor = unlocked ? Fade(GREEN, 0.7f) : (mouseOver ? Fade(DARKBLUE, 0.8f) : Fade(BLUE, 0.7f));
+    Color btnColor = unlocked ? Fade(GREEN, 0.7f) : (mouseOver ? Fade(DARKBLUE, 0.85f) : Fade(BLUE, 0.75f));
 
     DrawRectangleRec(btn, btnColor);
-    DrawRectangleLinesEx(btn, 5.0f, DARKBLUE); // Borde más delgado
+    DrawRectangleLinesEx(btn, 3.0f, DARKBLUE);
 
     const char *displayText = unlocked ? "Desbloqueado" : TextFormat("%s - %d Monedas", text, price);
-    int textWidth = MeasureText(displayText, 16); // Texto más pequeño para que quepa
-    DrawText(displayText, btnX + (btnWidth - textWidth) / 2, posY + (btnHeight - 16) / 2, 16, WHITE);
+    int textWidth = MeasureText(displayText, 15);
+    DrawText(displayText, posX + (btnWidth - textWidth) / 2, posY + (btnHeight - 15) / 2, 15, WHITE);
 
-    // Permitir compra si no está desbloqueado y hay suficientes monedas
     if (mouseOver && IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && !unlocked && *coins >= price)
     {
         *coins -= price;
@@ -569,31 +422,70 @@ void UpdateMusic(Music &gameMusic, bool &musicInitialized, int &currentMusicLeve
 
         switch (level)
         {
-        case 0: // Main menu
+        case 0:
             gameMusic = LoadMusicStream("src/sound/main.mp3");
-            SetMusicVolume(gameMusic, 0.1f);
             break;
-        case 1: // Level 1
+        case 1:
             gameMusic = LoadMusicStream("src/sound/level1.mp3");
-            SetMusicVolume(gameMusic, 0.1f);
-
             break;
-        case 2: // Level 2
+        case 2:
             gameMusic = LoadMusicStream("src/sound/level2.mp3");
-            SetMusicVolume(gameMusic, 0.1f);
-
             break;
-        case 3: // Level 3
+        case 3:
             gameMusic = LoadMusicStream("src/sound/level3.mp3");
-            SetMusicVolume(gameMusic, 0.1f);
-
             break;
         default:
             gameMusic = LoadMusicStream("src/sound/main.mp3");
-            SetMusicVolume(gameMusic, 0.1f);
+            break;
         }
+        SetMusicVolume(gameMusic, 0.1f);
         currentMusicLevel = level;
         PlayMusicStream(gameMusic);
     }
     UpdateMusicStream(gameMusic);
+}
+
+void GuardarProgreso(int coins, int selectedSkin, ColorOption colors[], bool nivelesDesbloqueados[], int highScores[])
+{
+    SaveData data = {0};
+    data.coins = coins;
+    data.selectedSkin = selectedSkin;
+    for (int i = 0; i < NUM_COLORS; i++)
+        data.unlockedSkins[i] = colors[i].unlocked;
+    for (int i = 0; i < NUM_NIVELES; i++)
+    {
+        data.unlockedLevels[i] = nivelesDesbloqueados[i];
+        data.highScores[i] = highScores[i];
+    }
+
+    FILE *file = fopen(SAVE_FILE, "wb");
+    if (file != NULL)
+    {
+        fwrite(&data, sizeof(SaveData), 1, file);
+        fclose(file);
+    }
+}
+
+void CargarProgreso(int *coins, int *selectedSkin, ColorOption colors[], bool nivelesDesbloqueados[], int highScores[])
+{
+    FILE *file = fopen(SAVE_FILE, "rb");
+    if (file != NULL)
+    {
+        SaveData data = {0};
+        if (fread(&data, sizeof(SaveData), 1, file) == 1)
+        {
+            *coins = data.coins;
+            *selectedSkin = (data.selectedSkin >= 0 && data.selectedSkin < NUM_COLORS) ? data.selectedSkin : 0;
+            for (int i = 0; i < NUM_COLORS; i++)
+                colors[i].unlocked = data.unlockedSkins[i];
+            colors[0].unlocked = true;
+            for (int i = 0; i < NUM_NIVELES; i++)
+            {
+                nivelesDesbloqueados[i] = data.unlockedLevels[i];
+                highScores[i] = data.highScores[i];
+            }
+            nivelesDesbloqueados[0] = true;
+        }
+        fclose(file);
+    }
 }
