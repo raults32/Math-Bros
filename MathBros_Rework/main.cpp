@@ -53,7 +53,7 @@ int main()
     const int screenHeight = 720;
     Vector2 posInicialJugador = {50.0f, 550.0f};
 
-    InitWindow(screenWidth, screenHeight, "Math Bros - Rework");
+    InitWindow(screenWidth, screenHeight, "Math Bros - Super Rework Edition");
 
     std::string applicationDirectory = GetApplicationDirectory();
     while (applicationDirectory.size() > 3 &&
@@ -70,19 +70,26 @@ int main()
         return 1;
     }
 
-    Music gameMusic;
+    Music gameMusic = {0};
     bool musicInitialized = false;
     int currentMusicLevel = 0;
     InitAudioDevice();
-    gameMusic = LoadMusicStream("src/sound/main.mp3");
-    musicInitialized = true;
-    SetMusicVolume(gameMusic, 0.1f);
-    PlayMusicStream(gameMusic);
+    if (FileExists("src/sound/main.mp3"))
+    {
+        gameMusic = LoadMusicStream("src/sound/main.mp3");
+        musicInitialized = true;
+        SetMusicVolume(gameMusic, 0.12f);
+        PlayMusicStream(gameMusic);
+    }
 
-    Image icon = LoadImage("src/images/icon.png");
-    SetWindowIcon(icon);
-    UnloadImage(icon);
+    if (FileExists("src/images/icon.png"))
+    {
+        Image icon = LoadImage("src/images/icon.png");
+        SetWindowIcon(icon);
+        UnloadImage(icon);
+    }
 
+    // Carga inteligente de fondos (soporta .png y .jpg automáticamente)
     Texture2D fondosNiveles[NUM_NIVELES];
     const char *rutasFondos[NUM_NIVELES] = {
         "src/images/nivel1.png",
@@ -91,10 +98,7 @@ int main()
 
     for (int i = 0; i < NUM_NIVELES; i++)
     {
-        Image img = LoadImage(rutasFondos[i]);
-        ImageResize(&img, screenWidth, screenHeight);
-        fondosNiveles[i] = LoadTextureFromImage(img);
-        UnloadImage(img);
+        fondosNiveles[i] = LoadTextureSmart(rutasFondos[i], screenWidth, screenHeight);
     }
 
     int coinsCollected = 0;
@@ -113,27 +117,14 @@ int main()
 
     for (int i = 0; i < NUM_COLORS; i++)
     {
-        Image imgFull = LoadImage(colors[i].imagePath);
-        colors[i].fullTexture = LoadTextureFromImage(imgFull);
-        UnloadImage(imgFull);
-
-        Image imgPreview = LoadImage(colors[i].previewPath);
-        ImageResize(&imgPreview, 150, 150);
-        colors[i].previewTexture = LoadTextureFromImage(imgPreview);
-        UnloadImage(imgPreview);
+        colors[i].fullTexture = LoadTextureSmart(colors[i].imagePath, 0, 0);
+        colors[i].previewTexture = LoadTextureSmart(colors[i].previewPath, 140, 140);
     }
 
     SetExitKey(0);
 
-    Image fondo = LoadImage("src/images/op1.jpg");
-    ImageResize(&fondo, screenWidth, screenHeight);
-    Texture2D fondoTexture = LoadTextureFromImage(fondo);
-    UnloadImage(fondo);
-
-    Image shop = LoadImage("src/images/shop.jpg");
-    ImageResize(&shop, screenWidth, screenHeight);
-    Texture2D shop_texture = LoadTextureFromImage(shop);
-    UnloadImage(shop);
+    Texture2D fondoTexture = LoadTextureSmart("src/images/op1.jpg", screenWidth, screenHeight);
+    Texture2D shop_texture = LoadTextureSmart("src/images/shop.jpg", screenWidth, screenHeight);
 
     SetTargetFPS(60);
 
@@ -146,38 +137,45 @@ int main()
             UpdateMusic(gameMusic, musicInitialized, currentMusicLevel, 0);
             BeginDrawing();
             ClearBackground(RAYWHITE);
-            fondoMenu(fondoTexture);
+            DrawMarioBackground(fondoTexture, 0, 0.0f);
             menuTitulo("MATH BROS");
 
-            DrawRectangle(10, 15, 220, 45, Fade(BLACK, 0.6f));
-            DrawRectangleLines(10, 15, 220, 45, GOLD);
-            DrawText(TextFormat("Monedas: %d", coinsCollected), 25, 27, 24, YELLOW);
+            // Contador de Monedas estilo Super Mario en la esquina superior izquierda
+            DrawMarioPanel((Rectangle){20, 20, 250, 62}, (Color){30, 65, 145, 240}, MARIO_YELLOW);
+            DrawCircle(52, 51, 14, BLACK);
+            DrawCircle(52, 51, 12, MARIO_YELLOW);
+            DrawText(TextFormat("MONEDAS: %d", coinsCollected), 76, 39, 24, MARIO_YELLOW);
 
-            int imgWidth = colors[selectedColorIndex].previewTexture.width;
-            int imgHeight = colors[selectedColorIndex].previewTexture.height;
-            float scale = 1.2f;
-            int frameWidth = (int)(imgWidth * scale) + 20;
-            int frameHeight = (int)(imgHeight * scale) + 20;
-            int frameX = 1280 - frameWidth - 20;
-            int frameY = 720 - frameHeight - 60;
+            // Vitrina estilo Mario para el personaje equipado actual
+            int frameWidth = 220;
+            int frameHeight = 235;
+            int frameX = 1280 - frameWidth - 35;
+            int frameY = 720 - frameHeight - 65;
 
-            const char *text = "Personaje actual";
-            int textSize = 24;
+            DrawMarioPanel((Rectangle){(float)frameX, (float)frameY, (float)frameWidth, (float)frameHeight},
+                           (Color){35, 75, 155, 235}, MARIO_YELLOW);
+
+            const char *text = "PERSONAJE";
+            int textSize = 22;
             int textWidth = MeasureText(text, textSize);
-            int textX = frameX + (frameWidth - textWidth) / 2;
-            int textY = frameY - 30;
-            DrawText(text, textX + 2, textY + 2, textSize, BLACK);
-            DrawText(text, textX, textY, textSize, YELLOW);
+            DrawText(text, frameX + (frameWidth - textWidth) / 2 + 2, frameY + 16, textSize, BLACK);
+            DrawText(text, frameX + (frameWidth - textWidth) / 2, frameY + 14, textSize, MARIO_YELLOW);
 
-            int imgX = frameX + (frameWidth - (int)(imgWidth * scale)) / 2;
-            int imgY = frameY + (frameHeight - (int)(imgHeight * scale)) / 2;
-            DrawTextureEx(colors[selectedColorIndex].previewTexture, (Vector2){(float)imgX, (float)imgY}, 0.0f, scale, WHITE);
+            float charBounce = sinf((float)GetTime() * 4.5f) * 5.0f;
+            int imgW = colors[selectedColorIndex].previewTexture.width;
+            int imgH = colors[selectedColorIndex].previewTexture.height;
+            int imgX = frameX + (frameWidth - imgW) / 2;
+            int imgY = frameY + 52 + (int)charBounce;
+            DrawTexture(colors[selectedColorIndex].previewTexture, imgX, imgY, WHITE);
 
-            if (btnsMenu("Jugar", 250))
+            int nameW = MeasureText(colors[selectedColorIndex].name, 20);
+            DrawText(colors[selectedColorIndex].name, frameX + (frameWidth - nameW) / 2, frameY + frameHeight - 34, 20, WHITE);
+
+            if (btnsMenu("Jugar", 235))
                 pantallaActual = MENU_NIVELES;
-            if (btnsMenu("Tienda", 365))
+            if (btnsMenu("Tienda", 345))
                 pantallaActual = MENU_TIENDA;
-            if (btnsMenu("Salir", 480))
+            if (btnsMenu("Salir", 455))
                 pantallaActual = SALIR;
 
             EndDrawing();
@@ -189,20 +187,21 @@ int main()
             UpdateMusic(gameMusic, musicInitialized, currentMusicLevel, 0);
             BeginDrawing();
             ClearBackground(RAYWHITE);
-            fondoMenu(fondoTexture);
-            menuTitulo("Niveles");
+            DrawMarioBackground(fondoTexture, 0, 150.0f);
+            menuTitulo("MUNDOS");
 
-            if (btnsNiveles("Nivel 1", "Pradera de Resortes", 140, 230, nivelesDesbloqueados[0], highScores[0]))
+            if (btnsNiveles("MUNDO 1-1", "Pradera de Resortes", 115, 205, nivelesDesbloqueados[0], highScores[0]))
                 pantallaActual = MENU_JUEGO;
 
-            if (btnsNiveles("Nivel 2", "Canon de Elevadores", 510, 230, nivelesDesbloqueados[1], highScores[1]))
+            if (btnsNiveles("MUNDO 1-2", "Canon de Elevadores", 495, 205, nivelesDesbloqueados[1], highScores[1]))
                 pantallaActual = MENU_JUEGO2;
 
-            if (btnsNiveles("Nivel 3", "Fortaleza del Guardian", 880, 230, nivelesDesbloqueados[2], highScores[2]))
+            if (btnsNiveles("MUNDO 1-3", "Fortaleza del Guardian", 875, 205, nivelesDesbloqueados[2], highScores[2]))
                 pantallaActual = MENU_JUEGO3;
 
-            DrawText("Presiona [SUPR / DEL] para reiniciar el progreso guardado", 380, 435, 18, LIGHTGRAY);
-            if (IsKeyPressed(KEY_DELETE))
+            // Botón Mario para reiniciar el progreso guardado o tecla SUPR
+            Rectangle resetBtn = {460, 435, 360, 48};
+            if (DrawMarioButton(resetBtn, "Reiniciar Progreso [SUPR]", (Color){140, 45, 45, 255}, MARIO_RED, 20) || IsKeyPressed(KEY_DELETE))
             {
                 coinsCollected = 0;
                 selectedColorIndex = 0;
@@ -211,7 +210,7 @@ int main()
                 GuardarProgreso(coinsCollected, selectedColorIndex, colors, nivelesDesbloqueados, highScores);
             }
 
-            if (btnsMenu("Volver", 530))
+            if (btnsMenu("Volver", 525))
                 pantallaActual = MENU_PRINCIPAL;
 
             EndDrawing();
@@ -282,49 +281,52 @@ int main()
             UpdateMusic(gameMusic, musicInitialized, currentMusicLevel, 0);
             BeginDrawing();
             ClearBackground(RAYWHITE);
-            fondoMenu(shop_texture);
+            DrawMarioBackground(shop_texture, 4, 0.0f);
 
-            DrawRectangle(10, 15, 220, 45, Fade(BLACK, 0.6f));
-            DrawRectangleLines(10, 15, 220, 45, GOLD);
-            DrawText(TextFormat("Monedas: %d", coinsCollected), 25, 27, 24, YELLOW);
+            DrawMarioPanel((Rectangle){20, 20, 250, 62}, (Color){30, 65, 145, 240}, MARIO_YELLOW);
+            DrawCircle(52, 51, 14, BLACK);
+            DrawCircle(52, 51, 12, MARIO_YELLOW);
+            DrawText(TextFormat("MONEDAS: %d", coinsCollected), 76, 39, 24, MARIO_YELLOW);
 
-            menuTitulo("Tienda");
+            menuTitulo("TIENDA");
 
-            const char *helpText = "¡Compra y equipa nuevos personajes! (Guardado automatico)";
+            const char *helpText = "★ ¡Desbloquea y equipa tus personajes favoritos! ★";
             int helpTextSize = 24;
             int helpTextWidth = MeasureText(helpText, helpTextSize);
             int helpTextX = (1280 - helpTextWidth) / 2;
-            int helpTextY = 160;
-            DrawText(helpText, helpTextX + 2, helpTextY + 2, helpTextSize, BLACK);
-            DrawText(helpText, helpTextX, helpTextY, helpTextSize, WHITE);
+            DrawText(helpText, helpTextX + 2, 148, helpTextSize, BLACK);
+            DrawText(helpText, helpTextX, 146, helpTextSize, MARIO_YELLOW);
 
-            int btnWidth = 180;
-            int btnHeight = 45;
-            int imageSize = 130;
-            int spacing = 60;
-
-            int totalWidth = NUM_COLORS * btnWidth + (NUM_COLORS - 1) * spacing;
+            int cardWidth = 210;
+            int spacing = 32;
+            int totalWidth = NUM_COLORS * cardWidth + (NUM_COLORS - 1) * spacing;
             int startX = (1280 - totalWidth) / 2;
-            int btnY = 400;
+            int cardY = 195;
 
             for (int i = 0; i < NUM_COLORS; i++)
             {
-                int btnX = startX + i * (btnWidth + spacing);
-                int imageX = btnX + (btnWidth - imageSize) / 2;
-                int imageY = btnY - imageSize - 30;
+                int cardX = startX + i * (cardWidth + spacing);
+                bool isEquipped = (i == selectedColorIndex);
 
-                if (i == selectedColorIndex)
+                Color panelCol = isEquipped ? (Color){45, 115, 65, 245} : (colors[i].unlocked ? (Color){40, 75, 150, 240} : (Color){60, 60, 75, 240});
+                DrawMarioPanel((Rectangle){(float)cardX, (float)cardY, (float)cardWidth, 330}, panelCol, isEquipped ? MARIO_YELLOW : WHITE);
+
+                int nameWidth = MeasureText(colors[i].name, 22);
+                DrawText(colors[i].name, cardX + (cardWidth - nameWidth) / 2 + 2, cardY + 20, 22, BLACK);
+                DrawText(colors[i].name, cardX + (cardWidth - nameWidth) / 2, cardY + 18, 22, MARIO_YELLOW);
+
+                float previewBounce = isEquipped ? sinf((float)GetTime() * 5.0f) * 5.0f : 0.0f;
+                int imageSize = 125;
+                int imageX = cardX + (cardWidth - imageSize) / 2;
+                int imageY = cardY + 52 + (int)previewBounce;
+
+                if (colors[i].previewTexture.id != 0)
                 {
-                    DrawRectangleLinesEx((Rectangle){(float)imageX - 5, (float)imageY - 5, (float)imageSize + 10, (float)imageSize + 10}, 3.0f, GOLD);
+                    DrawTextureEx(colors[i].previewTexture, (Vector2){(float)imageX, (float)imageY},
+                                  0.0f, (float)imageSize / colors[i].previewTexture.width, WHITE);
                 }
 
-                DrawTextureEx(colors[i].previewTexture, (Vector2){(float)imageX, (float)imageY},
-                              0.0f, (float)imageSize / colors[i].previewTexture.width, WHITE);
-
-                int nameWidth = MeasureText(colors[i].name, 18);
-                DrawText(colors[i].name, btnX + (btnWidth - nameWidth) / 2, imageY - 25, 18, WHITE);
-
-                if (DrawBuyButton(colors[i].name, colors[i].price, colors[i].unlocked, btnX, btnY, &coinsCollected))
+                if (DrawBuyButton(colors[i].name, colors[i].price, colors[i].unlocked, cardX + 15, cardY + 195, &coinsCollected))
                 {
                     colors[i].unlocked = true;
                     GuardarProgreso(coinsCollected, selectedColorIndex, colors, nivelesDesbloqueados, highScores);
@@ -332,26 +334,12 @@ int main()
 
                 if (colors[i].unlocked)
                 {
-                    int equipY = btnY + btnHeight + 15;
-                    Rectangle equipBtn = {(float)btnX, (float)equipY, (float)btnWidth, (float)btnHeight};
-                    bool equipMouseOver = CheckCollisionPointRec(GetMousePosition(), equipBtn);
+                    Rectangle equipBtn = {(float)(cardX + 15), (float)(cardY + 260), (float)(cardWidth - 30), 48};
+                    const char *equipText = isEquipped ? "★ EQUIPADO ★" : "EQUIPAR";
+                    Color eqBase = isEquipped ? MARIO_ORANGE : MARIO_GREEN;
+                    Color eqHover = isEquipped ? MARIO_YELLOW : (Color){65, 220, 85, 255};
 
-                    Color equipColor;
-                    if (i == selectedColorIndex)
-                        equipColor = Fade(GOLD, 0.85f);
-                    else if (equipMouseOver)
-                        equipColor = Fade(GREEN, 0.85f);
-                    else
-                        equipColor = Fade(DARKGREEN, 0.75f);
-
-                    DrawRectangleRec(equipBtn, equipColor);
-                    DrawRectangleLinesEx(equipBtn, 2.0f, (i == selectedColorIndex) ? GOLD : DARKGREEN);
-
-                    const char *equipText = (i == selectedColorIndex) ? "EQUIPADO" : "EQUIPAR";
-                    int equipTextWidth = MeasureText(equipText, 16);
-                    DrawText(equipText, btnX + (btnWidth - equipTextWidth) / 2, equipY + (btnHeight - 16) / 2, 16, WHITE);
-
-                    if (equipMouseOver && IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
+                    if (DrawMarioButton(equipBtn, equipText, eqBase, eqHover, 18))
                     {
                         selectedColorIndex = i;
                         GuardarProgreso(coinsCollected, selectedColorIndex, colors, nivelesDesbloqueados, highScores);
@@ -359,7 +347,7 @@ int main()
                 }
             }
 
-            if (btnsMenu("Volver", 580))
+            if (btnsMenu("Volver", 560))
                 pantallaActual = MENU_PRINCIPAL;
 
             EndDrawing();
@@ -398,23 +386,19 @@ int main()
 
 bool DrawBuyButton(const char *text, int price, bool unlocked, int posX, int posY, int *coins)
 {
-    int btnWidth = 180;
-    int btnHeight = 45;
-    Rectangle btn = {(float)posX, (float)posY, (float)btnWidth, (float)btnHeight};
-    bool mouseOver = CheckCollisionPointRec(GetMousePosition(), btn);
-    Color btnColor = unlocked ? Fade(GREEN, 0.7f) : (mouseOver ? Fade(DARKBLUE, 0.85f) : Fade(BLUE, 0.75f));
+    Rectangle btn = {(float)posX, (float)posY, 180.0f, 50.0f};
+    const char *displayText = unlocked ? "DESBLOQUEADO" : TextFormat("%d MONEDAS", price);
 
-    DrawRectangleRec(btn, btnColor);
-    DrawRectangleLinesEx(btn, 3.0f, DARKBLUE);
+    Color baseCol = unlocked ? (Color){45, 130, 65, 255} : ((*coins >= price) ? MARIO_BLUE : DARKGRAY);
+    Color hoverCol = unlocked ? (Color){45, 130, 65, 255} : ((*coins >= price) ? SKYBLUE : GRAY);
 
-    const char *displayText = unlocked ? "Desbloqueado" : TextFormat("%s - %d Monedas", text, price);
-    int textWidth = MeasureText(displayText, 15);
-    DrawText(displayText, posX + (btnWidth - textWidth) / 2, posY + (btnHeight - 15) / 2, 15, WHITE);
-
-    if (mouseOver && IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && !unlocked && *coins >= price)
+    if (DrawMarioButton(btn, displayText, baseCol, hoverCol, 17))
     {
-        *coins -= price;
-        return true;
+        if (!unlocked && *coins >= price)
+        {
+            *coins -= price;
+            return true;
+        }
     }
     return false;
 }
@@ -429,27 +413,18 @@ void UpdateMusic(Music &gameMusic, bool &musicInitialized, int &currentMusicLeve
         StopMusicStream(gameMusic);
         UnloadMusicStream(gameMusic);
 
-        switch (level)
+        const char *musicPath = "src/sound/main.mp3";
+        if (level == 1 && FileExists("src/sound/level1.mp3")) musicPath = "src/sound/level1.mp3";
+        else if (level == 2 && FileExists("src/sound/level2.mp3")) musicPath = "src/sound/level2.mp3";
+        else if (level == 3 && FileExists("src/sound/level3.mp3")) musicPath = "src/sound/level3.mp3";
+
+        if (FileExists(musicPath))
         {
-        case 0:
-            gameMusic = LoadMusicStream("src/sound/main.mp3");
-            break;
-        case 1:
-            gameMusic = LoadMusicStream("src/sound/level1.mp3");
-            break;
-        case 2:
-            gameMusic = LoadMusicStream("src/sound/level2.mp3");
-            break;
-        case 3:
-            gameMusic = LoadMusicStream("src/sound/level3.mp3");
-            break;
-        default:
-            gameMusic = LoadMusicStream("src/sound/main.mp3");
-            break;
+            gameMusic = LoadMusicStream(musicPath);
+            SetMusicVolume(gameMusic, 0.12f);
+            PlayMusicStream(gameMusic);
         }
-        SetMusicVolume(gameMusic, 0.1f);
         currentMusicLevel = level;
-        PlayMusicStream(gameMusic);
     }
     UpdateMusicStream(gameMusic);
 }

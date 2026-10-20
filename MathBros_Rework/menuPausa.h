@@ -1,7 +1,7 @@
 #ifndef MENU_PAUSA_H
 #define MENU_PAUSA_H
 
-#include "raylib.h"
+#include "mainMenu.h"
 
 typedef enum
 {
@@ -17,23 +17,30 @@ PausaOpcion menuPausa()
     int screenWidth = GetScreenWidth();
     int screenHeight = GetScreenHeight();
 
+    // Oscurecer el nivel congelado de fondo
     DrawRectangle(0, 0, screenWidth, screenHeight, Fade(BLACK, 0.65f));
 
-    int fontSize = 48;
-    const char *titulo = "JUEGO EN PAUSA";
+    // Tablero central estilo Mario Bros
+    Rectangle panel = {(screenWidth - 460) / 2.0f, 110, 460, 500};
+    DrawMarioPanel(panel, (Color){35, 65, 135, 250}, MARIO_YELLOW);
+
+    int fontSize = 44;
+    const char *titulo = "PAUSA";
     int textWidth = MeasureText(titulo, fontSize);
     int textX = (screenWidth - textWidth) / 2;
 
-    DrawText(titulo, textX + 3, 123, fontSize, BLACK);
-    DrawText(titulo, textX, 120, fontSize, ORANGE);
+    DrawText(titulo, textX + 4, 138, fontSize, BLACK);
+    DrawText(titulo, textX, 134, fontSize, MARIO_YELLOW);
 
-    int anchoBtn = 280;
-    int altoBtn = 55;
+    int anchoBtn = 320;
+    int altoBtn = 62;
     int x = screenWidth / 2 - anchoBtn / 2;
-    int yInicial = 220;
-    int espacio = 22;
+    int yInicial = 210;
+    int espacio = 24;
 
     const char *opciones[] = {"Continuar", "Reiniciar Nivel", "Menu Principal", "Salir del Juego"};
+    Color coloresBase[] = {MARIO_GREEN, MARIO_BLUE, MARIO_ORANGE, MARIO_RED};
+    Color coloresHover[] = {(Color){60, 220, 80, 255}, SKYBLUE, GOLD, (Color){255, 70, 70, 255}};
     PausaOpcion resultados[] = {PAUSA_CONTINUAR, PAUSA_REINICIAR, PAUSA_MENU_PRINCIPAL, PAUSA_SALIR};
 
     for (int i = 0; i < 4; i++)
@@ -44,16 +51,7 @@ PausaOpcion menuPausa()
             (float)anchoBtn,
             (float)altoBtn};
 
-        bool hover = CheckCollisionPointRec(GetMousePosition(), btn);
-        Color color = hover ? ORANGE : DARKGRAY;
-
-        DrawRectangleRec(btn, color);
-        DrawRectangleLinesEx(btn, 3.0f, hover ? GOLD : BLACK);
-
-        int optWidth = MeasureText(opciones[i], 22);
-        DrawText(opciones[i], x + (anchoBtn - optWidth) / 2, (int)btn.y + 16, 22, WHITE);
-
-        if (hover && IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
+        if (DrawMarioButton(btn, opciones[i], coloresBase[i], coloresHover[i], 24))
         {
             return resultados[i];
         }

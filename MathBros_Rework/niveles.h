@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
+#include "mainMenu.h"
 #include "menuPausa.h"
 #include "personaje.h"
 
@@ -293,9 +294,9 @@ GameStatus ejecutarNivel(
     const int screenWidth = 1280;
     const int screenHeight = 720;
 
-    Texture2D coinTex = LoadTexture("src/images/coin.png");
-    Texture2D platformTex = LoadTexture(rutaPlat);
-    Texture2D dirtTex = LoadTexture(rutaDirt);
+    Texture2D coinTex = LoadTextureSmart("src/images/coin.png", 0, 0);
+    Texture2D platformTex = LoadTextureSmart(rutaPlat, 0, 0);
+    Texture2D dirtTex = LoadTextureSmart(rutaDirt, 0, 0);
     Sound coinSound = LoadSound("src/sound/coin.mp3");
 
     EnvElement envElements[MAX_ENVIRONMENT_ELEMENTS];
@@ -552,19 +553,19 @@ GameStatus ejecutarNivel(
                         {
                             (*coinsCollected) += 3;
                             score += 150;
-                            SpawnFloatingText(floatingTexts, player.position, "¡CAJA: +3 MONEDAS!", GOLD);
+                            SpawnFloatingText(floatingTexts, player.position, "¡BLOQUE [?]: +3 MONEDAS!", GOLD);
                         }
                         else if (mysteryBlocks[i].rewardType == 1)
                         {
                             player.hasShield = true;
                             score += 100;
-                            SpawnFloatingText(floatingTexts, player.position, "¡ESCUDO PROTECTOR!", SKYBLUE);
+                            SpawnFloatingText(floatingTexts, player.position, "¡ESCUDO ESTRELLA!", SKYBLUE);
                         }
                         else
                         {
                             player.lives++;
                             score += 100;
-                            SpawnFloatingText(floatingTexts, player.position, "¡+1 VIDA EXTRA!", LIME);
+                            SpawnFloatingText(floatingTexts, player.position, "¡1-UP VIDA EXTRA!", LIME);
                         }
                     }
                 }
@@ -596,7 +597,7 @@ GameStatus ejecutarNivel(
                         player.scaleX = 0.68f;
                         player.scaleY = 1.40f;
                         SpawnParticles(particles, p[0], LIME, 22);
-                        SpawnFloatingText(floatingTexts, p[0], "¡SUPER SALTO!", LIME);
+                        SpawnFloatingText(floatingTexts, p[0], "¡SUPER RESORTE!", LIME);
                         hitObstacle = 0;
                         break;
                     }
@@ -646,7 +647,7 @@ GameStatus ejecutarNivel(
                         respawnPos = checkpoints[i].position;
                         score += 100;
                         SpawnParticles(particles, checkpoints[i].position, LIME, 28);
-                        SpawnFloatingText(floatingTexts, checkpoints[i].position, "¡CHECKPOINT GUARDADO!", GREEN);
+                        SpawnFloatingText(floatingTexts, checkpoints[i].position, "¡CHECKPOINT!", GREEN);
                         PlayCoinSound(coinSound);
                     }
                 }
@@ -906,9 +907,12 @@ GameStatus ejecutarNivel(
             }
         }
 
+        // ================= DIBUJO DEL ESCENARIO CON FONDO GARANTIZADO =================
         BeginDrawing();
-        ClearBackground(RAYWHITE);
-        DrawTexture(fondo, 0, 0, WHITE);
+        ClearBackground(BLACK);
+
+        // Dibuja el fondo del nivel + parallax procedural (Especialmente el Castillo en Nivel 3)
+        DrawMarioBackground(fondo, numeroNivel, camera.target.x);
 
         BeginMode2D(camera);
 
@@ -946,62 +950,74 @@ GameStatus ejecutarNivel(
             }
         }
 
+        // Bloques Misteriosos [?] con remaches estilo Mario Bros
         for (int i = 0; i < MAX_MYSTERY_BLOCKS; i++)
         {
             if (!mysteryBlocks[i].active) continue;
             Rectangle bRect = mysteryBlocks[i].rect;
             bRect.y -= mysteryBlocks[i].bounceOffset;
-            Color boxColor = mysteryBlocks[i].used ? GRAY : GOLD;
+            Color boxColor = mysteryBlocks[i].used ? (Color){130, 120, 110, 255} : MARIO_YELLOW;
+            DrawRectangleRec((Rectangle){bRect.x + 3, bRect.y + 4, bRect.width, bRect.height}, Fade(BLACK, 0.45f));
             DrawRectangleRec(bRect, boxColor);
-            DrawRectangleLinesEx(bRect, 3.5f, mysteryBlocks[i].used ? DARKGRAY : ORANGE);
+            DrawRectangleLinesEx(bRect, 3.5f, BLACK);
+            DrawCircle((int)bRect.x + 6, (int)bRect.y + 6, 2, BLACK);
+            DrawCircle((int)(bRect.x + bRect.width - 6), (int)bRect.y + 6, 2, BLACK);
+            DrawCircle((int)bRect.x + 6, (int)(bRect.y + bRect.height - 6), 2, BLACK);
+            DrawCircle((int)(bRect.x + bRect.width - 6), (int)(bRect.y + bRect.height - 6), 2, BLACK);
             const char *sym = mysteryBlocks[i].used ? "-" : "?";
-            DrawText(sym, (int)(bRect.x + 17), (int)(bRect.y + 8), 32, mysteryBlocks[i].used ? LIGHTGRAY : MAROON);
+            DrawText(sym, (int)(bRect.x + 17), (int)(bRect.y + 9), 32, mysteryBlocks[i].used ? DARKGRAY : MARIO_BRICK);
         }
 
+        // Checkpoints estilo asta de bandera de Mario
         for (int i = 0; i < MAX_CHECKPOINTS; i++)
         {
             if (!checkpoints[i].active) continue;
             Vector2 cp = checkpoints[i].position;
-            DrawRectangle((int)cp.x, (int)cp.y - 75, 6, 75, LIGHTGRAY);
-            Color flagCol = checkpoints[i].activated ? LIME : RED;
-            DrawTriangle((Vector2){cp.x + 6, cp.y - 75}, (Vector2){cp.x + 6, cp.y - 40}, (Vector2){cp.x + 48, cp.y - 57}, flagCol);
-            DrawText(checkpoints[i].activated ? "GUARDADO" : "CHECKPOINT", (int)cp.x - 25, (int)cp.y - 95, 14, flagCol);
+            DrawRectangle((int)cp.x - 1, (int)cp.y - 78, 8, 78, BLACK);
+            DrawRectangle((int)cp.x, (int)cp.y - 76, 6, 76, LIGHTGRAY);
+            DrawCircle((int)cp.x + 3, (int)cp.y - 80, 8, GOLD);
+            Color flagCol = checkpoints[i].activated ? MARIO_GREEN : MARIO_RED;
+            DrawTriangle((Vector2){cp.x + 6, cp.y - 75}, (Vector2){cp.x + 6, cp.y - 38}, (Vector2){cp.x + 52, cp.y - 56}, flagCol);
+            DrawText(checkpoints[i].activated ? "¡GUARDADO!" : "CHECKPOINT", (int)cp.x - 28, (int)cp.y - 102, 15, flagCol);
         }
 
+        // Portal Dimensional / Meta
         float portalPulse = sinf((float)GetTime() * 5.0f) * 6.0f;
         bool portalAbierto = (coinsAnsweredInLevel >= MIN_COINS_FOR_PORTAL);
-        Color portalCol = portalAbierto ? PURPLE : DARKGRAY;
-        DrawCircle((int)posPortalMeta.x, (int)posPortalMeta.y - 50, 46 + portalPulse, Fade(portalCol, 0.45f));
-        DrawCircle((int)posPortalMeta.x, (int)posPortalMeta.y - 50, 34, Fade(portalAbierto ? VIOLET : GRAY, 0.85f));
-        DrawCircleLines((int)posPortalMeta.x, (int)posPortalMeta.y - 50, 46 + portalPulse, GOLD);
-        const char *portalTxt = portalAbierto ? "¡META ABIERTA!" : TextFormat("META (%d/%d Monedas)", coinsAnsweredInLevel, MIN_COINS_FOR_PORTAL);
-        DrawText(portalTxt, (int)posPortalMeta.x - MeasureText(portalTxt, 18) / 2, (int)posPortalMeta.y - 115, 18, portalAbierto ? GOLD : LIGHTGRAY);
+        Color portalCol = portalAbierto ? MARIO_PURPLE : DARKGRAY;
+        DrawCircle((int)posPortalMeta.x, (int)posPortalMeta.y - 50, 48 + portalPulse, Fade(portalCol, 0.50f));
+        DrawCircle((int)posPortalMeta.x, (int)posPortalMeta.y - 50, 35, Fade(portalAbierto ? VIOLET : GRAY, 0.90f));
+        DrawCircleLines((int)posPortalMeta.x, (int)posPortalMeta.y - 50, 48 + portalPulse, MARIO_YELLOW);
+        const char *portalTxt = portalAbierto ? "★ ¡META ABIERTA! ★" : TextFormat("META (%d/%d Monedas)", coinsAnsweredInLevel, MIN_COINS_FOR_PORTAL);
+        DrawText(portalTxt, (int)posPortalMeta.x - MeasureText(portalTxt, 18) / 2, (int)posPortalMeta.y - 118, 18, portalAbierto ? MARIO_YELLOW : LIGHTGRAY);
 
+        // Enemigos y Jefe Guardián
         float bounce = fabsf(sinf((float)GetTime() * 8.0f)) * 5.0f;
         for (int i = 0; i < MAX_ENEMIES; i++)
         {
             if (enemies[i].active)
             {
                 Rectangle eRect = {enemies[i].position.x, enemies[i].position.y - enemies[i].height - bounce, enemies[i].width, enemies[i].height + bounce};
-                Color eColor = enemies[i].isBoss ? DARKPURPLE : MAROON;
-                DrawRectangleRec(eRect, eColor);
-                DrawRectangleLinesEx(eRect, 3.0f, enemies[i].isBoss ? GOLD : BLACK);
+                Color eColor = enemies[i].isBoss ? MARIO_PURPLE : MARIO_RED;
+                DrawRectangleRounded(eRect, 0.3f, 6, eColor);
+                DrawRectangleLinesEx(eRect, 3.0f, enemies[i].isBoss ? MARIO_YELLOW : BLACK);
 
                 int eyeOffset = (enemies[i].speed > 0) ? (int)(enemies[i].width * 0.5f) : 8;
                 DrawCircle((int)eRect.x + eyeOffset, (int)eRect.y + 14, enemies[i].isBoss ? 8 : 5, WHITE);
                 DrawCircle((int)eRect.x + eyeOffset + (enemies[i].isBoss ? 18 : 12), (int)eRect.y + 14, enemies[i].isBoss ? 8 : 5, WHITE);
-                DrawCircle((int)eRect.x + eyeOffset, (int)eRect.y + 14, 3, RED);
-                DrawCircle((int)eRect.x + eyeOffset + (enemies[i].isBoss ? 18 : 12), (int)eRect.y + 14, 3, RED);
+                DrawCircle((int)eRect.x + eyeOffset, (int)eRect.y + 14, 3, BLACK);
+                DrawCircle((int)eRect.x + eyeOffset + (enemies[i].isBoss ? 18 : 12), (int)eRect.y + 14, 3, BLACK);
 
                 if (enemies[i].isBoss)
                 {
-                    DrawText("GUARDIAN MATEMATICO", (int)eRect.x - 35, (int)eRect.y - 38, 16, GOLD);
-                    DrawRectangle((int)eRect.x - 10, (int)eRect.y - 18, 90, 10, DARKGRAY);
-                    DrawRectangle((int)eRect.x - 10, (int)eRect.y - 18, (int)(90.0f * ((float)enemies[i].hp / enemies[i].maxHp)), 10, RED);
+                    DrawText("REY GUARDIAN", (int)eRect.x - 20, (int)eRect.y - 38, 17, MARIO_YELLOW);
+                    DrawRectangle((int)eRect.x - 10, (int)eRect.y - 18, 92, 12, BLACK);
+                    DrawRectangle((int)eRect.x - 8, (int)eRect.y - 16, (int)(88.0f * ((float)enemies[i].hp / enemies[i].maxHp)), 8, MARIO_RED);
                 }
             }
         }
 
+        // Monedas
         float floatOffset = sinf((float)GetTime() * 4.5f) * 5.0f;
         for (int i = 0; i < MAX_COINS; i++)
         {
@@ -1010,7 +1026,7 @@ GameStatus ejecutarNivel(
                 if (coinTex.id != 0)
                     DrawTexture(coinTex, (int)coins[i].position.x, (int)(coins[i].position.y + floatOffset), WHITE);
                 else
-                    DrawCircle((int)coins[i].position.x + 15, (int)(coins[i].position.y + 15 + floatOffset), 15, YELLOW);
+                    DrawCircle((int)coins[i].position.x + 15, (int)(coins[i].position.y + 15 + floatOffset), 15, MARIO_YELLOW);
             }
         }
 
@@ -1043,57 +1059,67 @@ GameStatus ejecutarNivel(
                 frameHeight * finalScaleY};
             Vector2 origin = {(frameWidth * finalScaleX) / 2.0f, frameHeight * finalScaleY};
 
-            DrawTexturePro(jugadorTex, sourceRec, destRec, origin, player.rotation, (player.dashTimer > 0.0f) ? GOLD : WHITE);
+            DrawTexturePro(jugadorTex, sourceRec, destRec, origin, player.rotation, (player.dashTimer > 0.0f) ? MARIO_YELLOW : WHITE);
 
             if (player.hasShield)
             {
                 DrawCircleLines((int)player.position.x, (int)(player.position.y - frameHeight / 2), frameHeight * 0.65f, SKYBLUE);
-                DrawCircle((int)player.position.x, (int)(player.position.y - frameHeight / 2), frameHeight * 0.65f, Fade(SKYBLUE, 0.22f));
+                DrawCircle((int)player.position.x, (int)(player.position.y - frameHeight / 2), frameHeight * 0.65f, Fade(SKYBLUE, 0.25f));
             }
         }
 
         EndMode2D();
 
-        DrawRectangle(10, 10, 365, 92, Fade(BLACK, 0.65f));
-        DrawRectangleLines(10, 10, 365, 92, GOLD);
-        DrawText(TextFormat("NIVEL %d: %s", numeroNivel, nombreNivel), 22, 16, 18, GOLD);
-        DrawText(TextFormat("Vidas: %d  |  Racha: x%d  |  Escudo: %s", player.lives, streak, player.hasShield ? "SI" : "NO"),
-                 22, 42, 18, (player.lives == 1) ? RED : GREEN);
+        // ================= HUD COLORIDO ESTILO MARIO BROS =================
+        DrawMarioPanel((Rectangle){12, 12, 375, 92}, (Color){25, 55, 130, 235}, MARIO_YELLOW);
+        DrawText(TextFormat("MUNDO 1-%d: %s", numeroNivel, nombreNivel), 30, 22, 18, MARIO_YELLOW);
+        DrawText(TextFormat("Vidas: %d   |   Racha: x%d   |   Escudo: %s", player.lives, streak, player.hasShield ? "SI" : "NO"),
+                 30, 48, 17, (player.lives == 1) ? MARIO_RED : LIME);
         const char *dashStatus = (player.dashCooldown <= 0.0f) ? "LISTO (SHIFT)" : TextFormat("%.1fs", player.dashCooldown);
-        DrawText(TextFormat("Salto x2: ESPACIO  |  Dash: %s", dashStatus), 22, 68, 16, SKYBLUE);
+        DrawText(TextFormat("Salto x2: ESPACIO  |  Dash: %s", dashStatus), 30, 72, 15, SKYBLUE);
 
+        // Barra central de recorrido hacia el castillo/meta
         float avance = fmaxf(0.0f, fminf(1.0f, player.position.x / posPortalMeta.x));
-        DrawRectangle(430, 16, 420, 26, Fade(BLACK, 0.65f));
-        DrawRectangle(434, 20, (int)(412 * avance), 18, PURPLE);
-        DrawRectangleLines(430, 16, 420, 26, GOLD);
-        DrawText(TextFormat("Progreso a la Meta: %d%% (%d/%d Monedas)", (int)(avance * 100), coinsAnsweredInLevel, MIN_COINS_FOR_PORTAL), 465, 21, 16, WHITE);
+        DrawMarioPanel((Rectangle){425, 14, 430, 56}, (Color){35, 35, 55, 235}, WHITE);
+        DrawRectangle(445, 42, 390, 16, BLACK);
+        DrawRectangle(447, 44, (int)(386 * avance), 12, MARIO_GREEN);
+        DrawCircle(447 + (int)(386 * avance), 50, 9, MARIO_YELLOW);
+        DrawText(TextFormat("META: %d%%  (%d/%d Monedas)", (int)(avance * 100), coinsAnsweredInLevel, MIN_COINS_FOR_PORTAL), 505, 22, 17, WHITE);
 
-        DrawRectangle(screenWidth - 250, 10, 240, 75, Fade(BLACK, 0.65f));
-        DrawRectangleLines(screenWidth - 250, 10, 240, 75, GOLD);
-        DrawText(TextFormat("Monedas: %d", *coinsCollected), screenWidth - 235, 18, 22, YELLOW);
-        DrawText(TextFormat("Puntos: %d", score), screenWidth - 235, 48, 22, ORANGE);
+        // Panel derecho de Monedas y Puntos
+        DrawMarioPanel((Rectangle){screenWidth - 262, 12, 248, 82}, (Color){165, 35, 35, 235}, MARIO_YELLOW);
+        DrawCircle(screenWidth - 232, 36, 11, MARIO_YELLOW);
+        DrawText(TextFormat("MONEDAS: %d", *coinsCollected), screenWidth - 212, 26, 21, MARIO_YELLOW);
+        DrawText(TextFormat("PUNTOS: %d", score), screenWidth - 238, 56, 21, WHITE);
 
+        // ================= VENTANA DE PREGUNTA ESTILO BLOQUE [?] DE MARIO =================
         if (showingQuestion)
         {
-            DrawRectangle(0, 0, screenWidth, screenHeight, Fade(BLACK, 0.74f));
+            DrawRectangle(0, 0, screenWidth, screenHeight, Fade(BLACK, 0.72f));
 
-            int textWidth = MeasureText(currentQuestionData.text, 40);
-            DrawText(currentQuestionData.text, (screenWidth - textWidth) / 2, 85, 40, WHITE);
+            Rectangle qBox = {(screenWidth - 760) / 2.0f, 65, 760, 560};
+            DrawMarioPanel(qBox, (Color){35, 75, 165, 250}, MARIO_YELLOW);
+
+            const char *headerQ = "★ ¡DESAFIO MATEMATICO! ★";
+            DrawText(headerQ, (screenWidth - MeasureText(headerQ, 24)) / 2, 85, 24, MARIO_YELLOW);
+
+            int textWidth = MeasureText(currentQuestionData.text, 42);
+            DrawText(currentQuestionData.text, (screenWidth - textWidth) / 2 + 3, 125 + 3, 42, BLACK);
+            DrawText(currentQuestionData.text, (screenWidth - textWidth) / 2, 125, 42, WHITE);
 
             float ratio = fmaxf(0.0f, questionTimer / MAX_QUESTION_TIME);
-            DrawRectangle((screenWidth - 400) / 2, 140, 400, 18, DARKGRAY);
-            DrawRectangle((screenWidth - 400) / 2, 140, (int)(400 * ratio), 18, (ratio > 0.35f) ? LIME : RED);
-            DrawRectangleLines((screenWidth - 400) / 2, 140, 400, 18, WHITE);
+            DrawRectangle((screenWidth - 460) / 2, 182, 460, 22, BLACK);
+            DrawRectangle((screenWidth - 456) / 2, 184, (int)(452 * ratio), 18, (ratio > 0.35f) ? MARIO_GREEN : MARIO_RED);
 
-            char attemptInfo[80];
-            sprintf(attemptInfo, "Intentos: %d  |  Tiempo: %.1fs  |  Responde con Clic o Teclas [1-4]", MAX_ATTEMPTS - currentAttempts, questionTimer);
+            char attemptInfo[90];
+            sprintf(attemptInfo, "Intentos: %d  |  Tiempo: %.1fs  |  Usa Clic o Teclas [1 - 4]", MAX_ATTEMPTS - currentAttempts, questionTimer);
             int infoWidth = MeasureText(attemptInfo, 18);
-            DrawText(attemptInfo, (screenWidth - infoWidth) / 2, 168, 18, YELLOW);
+            DrawText(attemptInfo, (screenWidth - infoWidth) / 2, 212, 18, MARIO_YELLOW);
 
-            int btnWidth = 340;
-            int btnHeight = 52;
+            int btnWidth = 420;
+            int btnHeight = 58;
             int btnX = (screenWidth - btnWidth) / 2;
-            int btnY = 210;
+            int btnY = 250;
             int spacing = 18;
 
             int teclaSeleccionada = -1;
@@ -1105,20 +1131,17 @@ GameStatus ejecutarNivel(
                 if (IsKeyPressed(KEY_FOUR) || IsKeyPressed(KEY_KP_4)) teclaSeleccionada = 3;
             }
 
+            Color optColors[4] = {MARIO_RED, MARIO_BLUE, MARIO_GREEN, MARIO_PURPLE};
+            Color optHover[4] = {MARIO_ORANGE, SKYBLUE, (Color){70, 225, 85, 255}, VIOLET};
+
             for (int i = 0; i < 4; i++)
             {
                 Rectangle btn = {(float)btnX, (float)(btnY + i * (btnHeight + spacing)), (float)btnWidth, (float)btnHeight};
-                bool mouseOver = CheckCollisionPointRec(GetMousePosition(), btn) && (feedbackTimer <= 0.0f);
-                Color btnColor = mouseOver ? Fade(SKYBLUE, 0.9f) : Fade(BLUE, 0.75f);
+                const char *optLabel = TextFormat("[%d]    %s", i + 1, currentQuestionData.options[i]);
 
-                DrawRectangleRec(btn, btnColor);
-                DrawRectangleLinesEx(btn, 4.0f, mouseOver ? GOLD : DARKBLUE);
+                bool clickedOpt = DrawMarioButton(btn, optLabel, optColors[i], optHover[i], 26);
 
-                const char *optLabel = TextFormat("[%d]   %s", i + 1, currentQuestionData.options[i]);
-                int optWidth = MeasureText(optLabel, 22);
-                DrawText(optLabel, btnX + (btnWidth - optWidth) / 2, (int)btn.y + (btnHeight - 22) / 2, 22, WHITE);
-
-                if ((mouseOver && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) || teclaSeleccionada == i)
+                if ((clickedOpt && feedbackTimer <= 0.0f) || teclaSeleccionada == i)
                 {
                     answeredCorrectly = (i == currentQuestionData.correctAnswer);
 
@@ -1131,7 +1154,7 @@ GameStatus ejecutarNivel(
                         int ptsGanados = 100 * streak + (int)(questionTimer * 10);
                         score += ptsGanados;
 
-                        SpawnFloatingText(floatingTexts, player.position, TextFormat("+%d PTS!", ptsGanados), GOLD);
+                        SpawnFloatingText(floatingTexts, player.position, TextFormat("+%d PTS!", ptsGanados), MARIO_YELLOW);
                         currentAttempts = 0;
                         questionFailed = false;
                         showingQuestion = false;
@@ -1163,45 +1186,43 @@ GameStatus ejecutarNivel(
 
         if (feedbackTimer > 0.0f && !gameOver)
         {
+            const char *msg = NULL;
+            Color msgCol = WHITE;
             if (answeredCorrectly)
             {
-                const char *msg = (streak >= 3) ? "¡CORRECTO! ¡RACHA BONUS (+2 Monedas)!" : "¡Correcto! (+1 Moneda)";
-                DrawText(msg, (screenWidth - MeasureText(msg, 32)) / 2, 520, 32, GREEN);
+                msg = (streak >= 3) ? "¡CORRECTO! ¡RACHA BONUS (+2 Monedas)!" : "¡CORRECTO! (+1 Moneda)";
+                msgCol = MARIO_GREEN;
             }
             else if (questionFailed)
             {
-                const char *msg = "¡Fallaste la pregunta y perdiste 1 vida!";
-                DrawText(msg, (screenWidth - MeasureText(msg, 32)) / 2, 520, 32, ORANGE);
+                msg = "¡Fallaste la pregunta y perdiste 1 vida!";
+                msgCol = MARIO_ORANGE;
             }
             else
             {
-                char attemptMsg[100];
-                sprintf(attemptMsg, "Incorrecto. Intento %d de %d", currentAttempts, MAX_ATTEMPTS);
-                DrawText(attemptMsg, (screenWidth - MeasureText(attemptMsg, 30)) / 2, 520, 30, RED);
+                msg = TextFormat("Incorrecto. Intento %d de %d", currentAttempts, MAX_ATTEMPTS);
+                msgCol = MARIO_RED;
             }
+
+            int mw = MeasureText(msg, 32);
+            DrawRectangleRounded((Rectangle){(screenWidth - mw - 40) / 2.0f, 555, (float)mw + 40, 50}, 0.4f, 6, Fade(BLACK, 0.80f));
+            DrawText(msg, (screenWidth - mw) / 2, 565, 32, msgCol);
         }
 
         if (levelCompleted)
         {
             DrawRectangle(0, 0, screenWidth, screenHeight, Fade(BLACK, 0.78f));
-            DrawText("¡HAS COMPLETADO EL NIVEL!", (screenWidth - MeasureText("¡HAS COMPLETADO EL NIVEL!", 42)) / 2, 230, 42, GREEN);
-            DrawText(TextFormat("Puntaje Final: %d pts (Record: %d pts)", score, *highScoreNivel),
-                     (screenWidth - MeasureText(TextFormat("Puntaje Final: %d pts (Record: %d pts)", score, *highScoreNivel), 28)) / 2, 300, 28, GOLD);
+            DrawMarioPanel((Rectangle){(screenWidth - 640) / 2.0f, 170, 640, 360}, (Color){30, 110, 55, 250}, MARIO_YELLOW);
 
-            int btnWidth = 220;
-            int btnHeight = 55;
-            int btnX = (screenWidth - btnWidth) / 2;
-            int btnY = 390;
-            Rectangle btn = {(float)btnX, (float)btnY, (float)btnWidth, (float)btnHeight};
-            bool mouseOver = CheckCollisionPointRec(GetMousePosition(), btn);
-            Color btnColor = mouseOver ? Fade(GREEN, 0.9f) : Fade(DARKGREEN, 0.8f);
+            const char *winTitle = "¡MUNDO COMPLETADO!";
+            DrawText(winTitle, (screenWidth - MeasureText(winTitle, 44)) / 2 + 3, 213, 44, BLACK);
+            DrawText(winTitle, (screenWidth - MeasureText(winTitle, 44)) / 2, 210, 44, MARIO_YELLOW);
 
-            DrawRectangleRec(btn, btnColor);
-            DrawRectangleLinesEx(btn, 4.0f, GOLD);
-            int textWidth = MeasureText("Continuar", 24);
-            DrawText("Continuar", btnX + (btnWidth - textWidth) / 2, btnY + (btnHeight - 24) / 2, 24, WHITE);
+            const char *scoreTxt = TextFormat("Puntaje Final: %d pts  (Record: %d pts)", score, *highScoreNivel);
+            DrawText(scoreTxt, (screenWidth - MeasureText(scoreTxt, 26)) / 2, 295, 26, WHITE);
 
-            if (mouseOver && IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
+            Rectangle btnCont = {(screenWidth - 280) / 2.0f, 390, 280, 68};
+            if (DrawMarioButton(btnCont, "Continuar", MARIO_ORANGE, MARIO_YELLOW, 28))
             {
                 UnloadTexture(coinTex);
                 UnloadTexture(platformTex);
@@ -1214,11 +1235,18 @@ GameStatus ejecutarNivel(
 
         if (gameOver)
         {
-            DrawRectangle(0, 0, screenWidth, screenHeight, Fade(BLACK, 0.80f));
-            DrawText("¡TE QUEDASTE SIN VIDAS!", (screenWidth - MeasureText("¡TE QUEDASTE SIN VIDAS!", 42)) / 2, 260, 42, RED);
-            DrawText("Presiona R para reintentar o ESC para volver al menu", (screenWidth - MeasureText("Presiona R para reintentar o ESC para volver al menu", 24)) / 2, 330, 24, WHITE);
+            DrawRectangle(0, 0, screenWidth, screenHeight, Fade(BLACK, 0.82f));
+            DrawMarioPanel((Rectangle){(screenWidth - 640) / 2.0f, 180, 640, 340}, (Color){120, 25, 30, 250}, MARIO_YELLOW);
 
-            if (IsKeyPressed(KEY_ESCAPE))
+            const char *loseTitle = "¡GAME OVER!";
+            DrawText(loseTitle, (screenWidth - MeasureText(loseTitle, 52)) / 2 + 3, 223, 52, BLACK);
+            DrawText(loseTitle, (screenWidth - MeasureText(loseTitle, 52)) / 2, 220, 52, MARIO_RED);
+
+            const char *retryTxt = "Presiona [R] para Reintentar o [ESC] para Salir";
+            DrawText(retryTxt, (screenWidth - MeasureText(retryTxt, 22)) / 2, 320, 22, WHITE);
+
+            Rectangle btnBack = {(screenWidth - 280) / 2.0f, 390, 280, 64};
+            if (IsKeyPressed(KEY_ESCAPE) || DrawMarioButton(btnBack, "Volver a Niveles", MARIO_BLUE, SKYBLUE, 24))
             {
                 UnloadTexture(coinTex);
                 UnloadTexture(platformTex);
@@ -1454,7 +1482,8 @@ void DrawTiledPlatform(Texture2D texture, Rectangle platform, Color tint)
 {
     if (texture.id == 0)
     {
-        DrawRectangleRec(platform, tint);
+        DrawRectangleRec(platform, (tint.r == 255 && tint.g == 255 && tint.b == 255) ? MARIO_BRICK : tint);
+        DrawRectangleLinesEx(platform, 2.5f, BLACK);
         return;
     }
 

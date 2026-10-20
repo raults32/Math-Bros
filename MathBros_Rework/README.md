@@ -27,4 +27,4 @@ run.bat
 - Borrar el progreso guardado desde el menú de niveles: Supr.
 
 ## Cambios incluidos
-Tres niveles largos con plataformas móviles, elevadores, plataformas frágiles, trampolines, bloques de recompensa, checkpoints, portal de salida y jefe final; animación procedural, partículas, dash, progresión, tienda y guardado automático en `savegame.dat`.
+Tres niveles largos con plataformas móviles, elevadores, plataformas frágiles, trampolines, bloques de recompensa, checkpoints, portal de salida y jefe final; animación procedural, partículas, dash, progresión, tienda y guardado automático en `savegame.dat`. La interfaz ahora usa tarjetas, botones y fondos animados con una estética de plataformas colorida; los niveles tienen un fondo procedural alternativo para evitar pantallas vacías si falta una textura.
