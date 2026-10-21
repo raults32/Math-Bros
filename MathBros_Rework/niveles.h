@@ -950,7 +950,7 @@ GameStatus ejecutarNivel(
         }
 
         // ================= DIBUJO DEL ESCENARIO CON FONDO GARANTIZADO =================
-        BeginDrawing();
+        ComenzarDibujo();
         ClearBackground(BLACK);
 
         // Dibuja el fondo del nivel + parallax procedural (Especialmente el Castillo en Nivel 3)
@@ -1275,7 +1275,7 @@ GameStatus ejecutarNivel(
                 UnloadTexture(platformTex);
                 UnloadTexture(dirtTex);
                 UnloadSound(coinSound);
-                EndDrawing();
+                TerminarDibujo();
                 return GAME_WON;
             }
         }
@@ -1299,7 +1299,7 @@ GameStatus ejecutarNivel(
                 UnloadTexture(platformTex);
                 UnloadTexture(dirtTex);
                 UnloadSound(coinSound);
-                EndDrawing();
+                TerminarDibujo();
                 return GAME_OVER;
             }
         }
@@ -1338,7 +1338,7 @@ GameStatus ejecutarNivel(
                 UnloadTexture(platformTex);
                 UnloadTexture(dirtTex);
                 UnloadSound(coinSound);
-                EndDrawing();
+                TerminarDibujo();
                 return GAME_EXIT_MAIN_MENU;
             }
             else if (op == PAUSA_SALIR)
@@ -1347,12 +1347,12 @@ GameStatus ejecutarNivel(
                 UnloadTexture(platformTex);
                 UnloadTexture(dirtTex);
                 UnloadSound(coinSound);
-                EndDrawing();
+                TerminarDibujo();
                 return GAME_EXIT_APP;
             }
         }
 
-        EndDrawing();
+        TerminarDibujo();
     }
 
     UnloadTexture(platformTex);

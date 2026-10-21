@@ -7,6 +7,7 @@
 #include <stdbool.h>
 #include <math.h>
 #include "halloween.h"
+#include "pantalla.h"
 
 // Paleta de colores estilo Super Mario Bros
 #define MARIO_RED      (Color){230, 35, 35, 255}

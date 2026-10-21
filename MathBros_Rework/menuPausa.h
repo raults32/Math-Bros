@@ -14,8 +14,8 @@ typedef enum
 
 PausaOpcion menuPausa()
 {
-    int screenWidth = GetScreenWidth();
-    int screenHeight = GetScreenHeight();
+    int screenWidth = PANTALLA_ANCHO;
+    int screenHeight = PANTALLA_ALTO;
 
     // Oscurecer el nivel congelado de fondo
     DrawRectangle(0, 0, screenWidth, screenHeight, Fade(BLACK, 0.65f));

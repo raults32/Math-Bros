@@ -43,6 +43,7 @@ El juego incluye decoraciones de Halloween dibujadas por código (`halloween.h`)
 - Dash: Shift izquierdo o K.
 - Responder una opción: clic izquierdo o teclas 1–4.
 - Pausar: Esc.
+- Pantalla completa: F11 o Alt+Enter. La ventana también se puede maximizar o redimensionar; el juego se escala manteniendo la proporción.
 - Reiniciar tras perder: R.
 - Borrar el progreso guardado desde el menú de niveles: Supr.
 

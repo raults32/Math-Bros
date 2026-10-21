@@ -53,7 +53,14 @@ int main()
     const int screenHeight = 720;
     Vector2 posInicialJugador = {50.0f, 550.0f};
 
+#ifdef __APPLE__
+    // En pantallas Retina, raylib solo escala bien al redimensionar con HIGHDPI activado
+    SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_WINDOW_HIGHDPI);
+#else
+    SetConfigFlags(FLAG_WINDOW_RESIZABLE);
+#endif
     InitWindow(screenWidth, screenHeight, "Math Bros - Super Rework Edition");
+    InicializarPantalla();
 
     std::string applicationDirectory = GetApplicationDirectory();
     while (applicationDirectory.size() > 3 &&
@@ -140,7 +147,7 @@ int main()
         case MENU_PRINCIPAL:
         {
             UpdateMusic(gameMusic, musicInitialized, currentMusicLevel, 0);
-            BeginDrawing();
+            ComenzarDibujo();
             ClearBackground(RAYWHITE);
             DrawMarioBackground(fondoTexture, 0, 0.0f);
             menuTitulo("MATH BROS");
@@ -183,14 +190,14 @@ int main()
             if (btnsMenu("Salir", 455))
                 pantallaActual = SALIR;
 
-            EndDrawing();
+            TerminarDibujo();
             break;
         }
 
         case MENU_NIVELES:
         {
             UpdateMusic(gameMusic, musicInitialized, currentMusicLevel, 0);
-            BeginDrawing();
+            ComenzarDibujo();
             ClearBackground(RAYWHITE);
             DrawMarioBackground(fondoTexture, 0, 150.0f);
             menuTitulo("MUNDOS");
@@ -218,7 +225,7 @@ int main()
             if (btnsMenu("Volver", 525))
                 pantallaActual = MENU_PRINCIPAL;
 
-            EndDrawing();
+            TerminarDibujo();
             break;
         }
 
@@ -284,7 +291,7 @@ int main()
         case MENU_TIENDA:
         {
             UpdateMusic(gameMusic, musicInitialized, currentMusicLevel, 0);
-            BeginDrawing();
+            ComenzarDibujo();
             ClearBackground(RAYWHITE);
             DrawMarioBackground(shop_texture, 4, 0.0f);
 
@@ -355,7 +362,7 @@ int main()
             if (btnsMenu("Volver", 560))
                 pantallaActual = MENU_PRINCIPAL;
 
-            EndDrawing();
+            TerminarDibujo();
             break;
         }
 
@@ -385,6 +392,7 @@ int main()
         CloseAudioDevice();
     }
 
+    CerrarPantalla();
     CloseWindow();
     return 0;
 }
