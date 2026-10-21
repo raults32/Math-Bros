@@ -8,7 +8,7 @@ Haz doble clic en `run.bat`. Este abre `main.exe` desde la carpeta del proyecto 
 
 ## Compilar desde el código fuente
 
-Se necesita MinGW-w64 con `g++` y raylib instalada. Después ejecuta:
+Se necesita MinGW-w64 con `g++` y raylib instalada. Lo más fácil es usar el instalador oficial de raylib para Windows (https://raysan5.itch.io/raylib): `compile.bat` detecta automáticamente `C:\raylib` y su compilador w64devkit aunque `g++` no esté en el PATH. Después ejecuta:
 
 ```bat
 compile.bat main.cpp

@@ -4,8 +4,7 @@ Renovacion independiente de Math Bros. El proyecto original permanece en la carp
 
 ## Requisitos
 - Windows 64 bits.
-- MinGW-w64 (`g++`) en `PATH`.
-- raylib para MinGW-w64 instalada y enlazable con `-lraylib`.
+- MinGW-w64 (`g++`) en `PATH` y raylib enlazable con `-lraylib`, **o** el instalador oficial de raylib para Windows (https://raysan5.itch.io/raylib) en `C:\raylib`: `compile.bat` lo detecta automáticamente.
 
 ## Compilar y ejecutar
 Abre una terminal en esta carpeta y ejecuta:
