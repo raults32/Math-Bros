@@ -62,8 +62,13 @@ int main()
         applicationDirectory.pop_back();
     }
 
-    const std::string currentDirectory = GetWorkingDirectory();
-    if (currentDirectory != applicationDirectory && !ChangeDirectory(applicationDirectory.c_str()))
+    // ChangeDirectory devuelve bool en raylib 5.x e int (0 = exito) en 6.x,
+    // asi que se comprueba el directorio resultante en lugar del valor devuelto.
+    if (applicationDirectory != GetWorkingDirectory())
+    {
+        ChangeDirectory(applicationDirectory.c_str());
+    }
+    if (applicationDirectory != GetWorkingDirectory())
     {
         TraceLog(LOG_ERROR, "No se pudo abrir la carpeta del ejecutable: %s", applicationDirectory.c_str());
         CloseWindow();
@@ -190,13 +195,13 @@ int main()
             DrawMarioBackground(fondoTexture, 0, 150.0f);
             menuTitulo("MUNDOS");
 
-            if (btnsNiveles("MUNDO 1-1", "Pradera de Resortes", 115, 205, nivelesDesbloqueados[0], highScores[0]))
+            if (btnsNiveles("MUNDO 1-1", "Facil - Primaria", 115, 205, nivelesDesbloqueados[0], highScores[0]))
                 pantallaActual = MENU_JUEGO;
 
-            if (btnsNiveles("MUNDO 1-2", "Canon de Elevadores", 495, 205, nivelesDesbloqueados[1], highScores[1]))
+            if (btnsNiveles("MUNDO 1-2", "Medio - Primaria", 495, 205, nivelesDesbloqueados[1], highScores[1]))
                 pantallaActual = MENU_JUEGO2;
 
-            if (btnsNiveles("MUNDO 1-3", "Fortaleza del Guardian", 875, 205, nivelesDesbloqueados[2], highScores[2]))
+            if (btnsNiveles("MUNDO 1-3", "Dificil - Preparatoria", 875, 205, nivelesDesbloqueados[2], highScores[2]))
                 pantallaActual = MENU_JUEGO3;
 
             // Botón Mario para reiniciar el progreso guardado o tecla SUPR

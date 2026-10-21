@@ -1,0 +1,4 @@
+main
+savegame.dat
+*.o
+*.obj

@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
+#include <stdlib.h>
 #include "mainMenu.h"
 #include "menuPausa.h"
 #include "personaje.h"
@@ -156,81 +157,118 @@ Question GenerarPreguntaAleatoria(int dificultad)
 {
     Question q = {0};
     int a = 0, b = 0, c = 0, respuesta = 0;
-    int tipo = GetRandomValue(0, 2);
 
     if (dificultad == 1)
     {
+        // Facil (primaria baja): sumas y restas hasta 20, tablas sencillas
+        int tipo = GetRandomValue(0, 2);
         if (tipo == 0)
+        {
+            a = GetRandomValue(1, 10);
+            b = GetRandomValue(1, 10);
+            respuesta = a + b;
+            snprintf(q.text, sizeof(q.text), "¿Cuanto es %d + %d?", a, b);
+        }
+        else if (tipo == 1)
+        {
+            a = GetRandomValue(5, 20);
+            b = GetRandomValue(1, a);
+            respuesta = a - b;
+            snprintf(q.text, sizeof(q.text), "¿Cuanto es %d - %d?", a, b);
+        }
+        else
+        {
+            int tablas[4] = {2, 3, 5, 10};
+            a = tablas[GetRandomValue(0, 3)];
+            b = GetRandomValue(1, 5);
+            respuesta = a * b;
+            snprintf(q.text, sizeof(q.text), "¿Cuanto es %d x %d?", a, b);
+        }
+    }
+    else if (dificultad == 2)
+    {
+        // Medio (primaria alta): dos cifras, tablas completas y divisiones exactas
+        int tipo = GetRandomValue(0, 3);
+        if (tipo == 0)
+        {
+            a = GetRandomValue(10, 60);
+            b = GetRandomValue(5, 39);
+            respuesta = a + b;
+            snprintf(q.text, sizeof(q.text), "¿Cuanto es %d + %d?", a, b);
+        }
+        else if (tipo == 1)
+        {
+            a = GetRandomValue(20, 99);
+            b = GetRandomValue(5, a - 5);
+            respuesta = a - b;
+            snprintf(q.text, sizeof(q.text), "¿Cuanto es %d - %d?", a, b);
+        }
+        else if (tipo == 2)
         {
             a = GetRandomValue(2, 9);
             b = GetRandomValue(2, 9);
             respuesta = a * b;
             snprintf(q.text, sizeof(q.text), "¿Cuanto es %d x %d?", a, b);
         }
-        else if (tipo == 1)
-        {
-            a = GetRandomValue(15, 65);
-            b = GetRandomValue(12, 55);
-            respuesta = a + b;
-            snprintf(q.text, sizeof(q.text), "¿Cuanto es %d + %d?", a, b);
-        }
         else
         {
-            a = GetRandomValue(35, 95);
-            b = GetRandomValue(10, a - 5);
-            respuesta = a - b;
-            snprintf(q.text, sizeof(q.text), "¿Cuanto es %d - %d?", a, b);
-        }
-    }
-    else if (dificultad == 2)
-    {
-        if (tipo == 0)
-        {
-            b = GetRandomValue(4, 9);
-            respuesta = GetRandomValue(4, 12);
+            b = GetRandomValue(2, 9);
+            respuesta = GetRandomValue(2, 10);
             a = b * respuesta;
             snprintf(q.text, sizeof(q.text), "¿Cuanto es %d / %d?", a, b);
-        }
-        else if (tipo == 1)
-        {
-            a = GetRandomValue(120, 380);
-            b = GetRandomValue(45, 190);
-            respuesta = a + b;
-            snprintf(q.text, sizeof(q.text), "¿Cuanto es %d + %d?", a, b);
-        }
-        else
-        {
-            a = GetRandomValue(7, 14);
-            b = GetRandomValue(6, 11);
-            respuesta = a * b;
-            snprintf(q.text, sizeof(q.text), "¿Cuanto es %d x %d?", a, b);
         }
     }
     else
     {
+        // Dificil (preparatoria): ecuaciones, potencias, raices, porcentajes y jerarquia con negativos
+        int tipo = GetRandomValue(0, 4);
         if (tipo == 0)
         {
-            a = GetRandomValue(6, 12);
-            b = GetRandomValue(4, 9);
-            c = GetRandomValue(10, 40);
-            respuesta = (a * b) + c;
-            snprintf(q.text, sizeof(q.text), "¿Cuanto es (%d x %d) + %d?", a, b, c);
+            a = GetRandomValue(2, 9);
+            respuesta = GetRandomValue(-9, 12);
+            if (respuesta == 0) respuesta = 5;
+            b = GetRandomValue(-20, 20);
+            if (b == 0) b = 7;
+            c = a * respuesta + b;
+            snprintf(q.text, sizeof(q.text), "Si %dx %c %d = %d, ¿x = ?", a, b < 0 ? '-' : '+', b < 0 ? -b : b, c);
         }
         else if (tipo == 1)
         {
-            a = GetRandomValue(8, 15);
-            b = GetRandomValue(5, 10);
-            c = GetRandomValue(5, 25);
-            respuesta = (a * b) - c;
-            snprintf(q.text, sizeof(q.text), "¿Cuanto es (%d x %d) - %d?", a, b, c);
+            if (GetRandomValue(0, 1) == 0)
+            {
+                a = GetRandomValue(11, 15);
+                b = 2;
+            }
+            else
+            {
+                a = GetRandomValue(2, 3);
+                b = (a == 2) ? GetRandomValue(5, 8) : GetRandomValue(3, 4);
+            }
+            respuesta = 1;
+            for (int i = 0; i < b; i++) respuesta *= a;
+            snprintf(q.text, sizeof(q.text), "¿Cuanto es %d^%d?", a, b);
+        }
+        else if (tipo == 2)
+        {
+            respuesta = GetRandomValue(11, 25);
+            snprintf(q.text, sizeof(q.text), "¿Raiz cuadrada de %d?", respuesta * respuesta);
+        }
+        else if (tipo == 3)
+        {
+            int porcentajes[5] = {10, 15, 20, 25, 75};
+            a = porcentajes[GetRandomValue(0, 4)];
+            b = GetRandomValue(2, 20) * 20;
+            respuesta = a * b / 100;
+            snprintf(q.text, sizeof(q.text), "¿Cuanto es el %d%% de %d?", a, b);
         }
         else
         {
-            a = GetRandomValue(250, 600);
-            b = GetRandomValue(100, 220);
-            c = GetRandomValue(15, 80);
-            respuesta = a - b + c;
-            snprintf(q.text, sizeof(q.text), "¿Cuanto es %d - %d + %d?", a, b, c);
+            a = GetRandomValue(-10, 15);
+            b = GetRandomValue(3, 9);
+            c = GetRandomValue(-6, 6);
+            if (c == 0) c = -4;
+            respuesta = a - b * c;
+            snprintf(q.text, sizeof(q.text), "¿Cuanto es %d - %d x (%d)?", a, b, c);
         }
     }
 
@@ -250,12 +288,16 @@ Question GenerarPreguntaAleatoria(int dificultad)
             do
             {
                 repetido = false;
-                int offset = GetRandomValue(-12, 12);
+                // Opciones incorrectas cercanas a la respuesta, proporcionales a su tamano
+                int rango = abs(respuesta) / 5;
+                if (rango < 3) rango = 3;
+                if (rango > 12) rango = 12;
+                int offset = GetRandomValue(-rango, rango);
                 if (offset == 0)
-                    offset = 4;
+                    offset = 1;
                 distractor = respuesta + offset;
-                if (distractor < 0)
-                    distractor = respuesta + GetRandomValue(2, 10);
+                if (distractor < 0 && dificultad < 3)
+                    distractor = respuesta + GetRandomValue(1, rango);
                 if (distractor == respuesta)
                     repetido = true;
                 for (int j = 0; j < i; j++)
@@ -947,6 +989,8 @@ GameStatus ejecutarNivel(
                     DrawRectangleLinesEx(drawRect, 3.0f, GREEN);
                     DrawText("^^^", (int)(drawRect.x + drawRect.width / 2 - 18), (int)(drawRect.y + 8), 20, DARKGREEN);
                 }
+
+                DrawHalloweenPlatformDecor(drawRect, i);
             }
         }
 
@@ -1010,6 +1054,9 @@ GameStatus ejecutarNivel(
 
                 if (enemies[i].isBoss)
                 {
+#if MODO_HALLOWEEN
+                    DrawWitchHat((Vector2){eRect.x + eRect.width / 2.0f, eRect.y + 2}, eRect.width * 0.9f);
+#endif
                     DrawText("REY GUARDIAN", (int)eRect.x - 20, (int)eRect.y - 38, 17, MARIO_YELLOW);
                     DrawRectangle((int)eRect.x - 10, (int)eRect.y - 18, 92, 12, BLACK);
                     DrawRectangle((int)eRect.x - 8, (int)eRect.y - 16, (int)(88.0f * ((float)enemies[i].hp / enemies[i].maxHp)), 8, MARIO_RED);

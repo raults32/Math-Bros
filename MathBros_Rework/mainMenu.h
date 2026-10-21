@@ -6,6 +6,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include <math.h>
+#include "halloween.h"
 
 // Paleta de colores estilo Super Mario Bros
 #define MARIO_RED      (Color){230, 35, 35, 255}
@@ -28,32 +29,22 @@ Texture2D LoadTextureSmart(const char *path, int targetWidth, int targetHeight);
 // Cargador inteligente que prueba .png, .jpg y .bmp para que nunca falte una imagen
 Texture2D LoadTextureSmart(const char *path, int targetWidth, int targetHeight)
 {
+    // Si el formato no esta soportado (p. ej. raylib compilada sin JPG en macOS),
+    // tambien se intenta con la siguiente extension.
     Image img = {0};
     if (FileExists(path))
     {
         img = LoadImage(path);
     }
-    else
+
+    char altPath[128] = {0};
+    strncpy(altPath, path, sizeof(altPath) - 1);
+    char *dot = strrchr(altPath, '.');
+    const char *extensiones[] = {".png", ".jpg", ".bmp"};
+    for (int i = 0; dot != NULL && img.data == NULL && i < 3; i++)
     {
-        // Probar cambiando la extensión automáticamente (.png <-> .jpg)
-        char altPath[128] = {0};
-        strncpy(altPath, path, sizeof(altPath) - 1);
-        char *dot = strrchr(altPath, '.');
-        if (dot != NULL)
-        {
-            strcpy(dot, ".png");
-            if (FileExists(altPath)) img = LoadImage(altPath);
-            else
-            {
-                strcpy(dot, ".jpg");
-                if (FileExists(altPath)) img = LoadImage(altPath);
-                else
-                {
-                    strcpy(dot, ".bmp");
-                    if (FileExists(altPath)) img = LoadImage(altPath);
-                }
-            }
-        }
+        strcpy(dot, extensiones[i]);
+        if (strcmp(altPath, path) != 0 && FileExists(altPath)) img = LoadImage(altPath);
     }
 
     if (img.data != NULL)
@@ -206,7 +197,11 @@ void menuTitulo(const char textotitulo[])
     int startX = (1280 - totalWidth) / 2;
     int baseY = 42;
 
+#if MODO_HALLOWEEN
+    Color marioPalette[5] = {HW_ORANGE, HW_PURPLE, HW_SLIME, HW_ORANGE, (Color){235, 235, 255, 255}};
+#else
     Color marioPalette[5] = {MARIO_RED, MARIO_GREEN, MARIO_YELLOW, MARIO_BLUE, MARIO_ORANGE};
+#endif
 
     int curX = startX;
     float time = (float)GetTime();
@@ -379,6 +374,11 @@ void DrawMarioBackground(Texture2D bgTex, int theme, float scrollX)
             }
         }
     }
+
+    // 4. Capa de Halloween (noche, luna, murciélagos, telarañas)
+    DrawHalloweenSky(theme, scrollX);
+    if (theme == 0)
+        DrawHalloweenMenuDecor();
 }
 
 void fondoMenu(Texture2D fondoTexture)

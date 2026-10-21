@@ -62,8 +62,13 @@ int main()
         applicationDirectory.pop_back();
     }
 
-    const std::string currentDirectory = GetWorkingDirectory();
-    if (currentDirectory != applicationDirectory && !ChangeDirectory(applicationDirectory.c_str()))
+    // ChangeDirectory devuelve bool en raylib 5.x e int (0 = exito) en 6.x,
+    // asi que se comprueba el directorio resultante en lugar del valor devuelto.
+    if (applicationDirectory != GetWorkingDirectory())
+    {
+        ChangeDirectory(applicationDirectory.c_str());
+    }
+    if (applicationDirectory != GetWorkingDirectory())
     {
         TraceLog(LOG_ERROR, "No se pudo abrir la carpeta del ejecutable: %s", applicationDirectory.c_str());
         CloseWindow();

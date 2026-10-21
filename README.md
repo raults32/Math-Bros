@@ -15,3 +15,20 @@ compile.bat main.cpp
 ```
 
 Los recursos del juego están en `src/images/` y `src/sound/`.
+
+## macOS
+
+Requisitos: herramientas de línea de comandos de Xcode (`xcode-select --install`) y raylib vía [Homebrew](https://brew.sh):
+
+```sh
+brew install raylib
+```
+
+Compilar y ejecutar desde la carpeta del proyecto:
+
+```sh
+./compile.sh
+./run.sh
+```
+
+`run.sh` compila automáticamente si todavía no existe el ejecutable `main`. raylib se enlaza de forma estática, así que el binario no necesita Homebrew para ejecutarse.
