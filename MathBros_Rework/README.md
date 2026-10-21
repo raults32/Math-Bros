@@ -6,6 +6,9 @@ Renovacion independiente de Math Bros. El proyecto original permanece en la carp
 - Windows 64 bits.
 - MinGW-w64 (`g++`) en `PATH` y raylib enlazable con `-lraylib`, **o** el instalador oficial de raylib para Windows (https://raysan5.itch.io/raylib) en `C:\raylib`: `compile.bat` lo detecta automáticamente.
 
+## Jugar en Windows sin compilar
+La carpeta incluye `main.exe` ya compilado (64 bits, raylib 6.2). Haz doble clic en `run.bat`.
+
 ## Compilar y ejecutar
 Abre una terminal en esta carpeta y ejecuta:
 
